@@ -1,9 +1,11 @@
-import random
+# format availability [[one persons schedule entire time],
+#                       [another persons schedule entire time],
+#                        [a third persons schedule entire time]]
 
-# Sort days based on estimated "difficulty" (entropy?).
-# So like, easy days have many options, and they should be solved last.
-# hard days have few options, and should be solved first.
-#
+
+
+
+# - Ideas -
 # The difficulty could be based on the number of people available that day.
 # Or the difficulty could be a weighted sum of the
 # people available that day, with the weights corresponding
@@ -12,13 +14,6 @@ import random
 # the higher or lower part, but this is a good idea! Balance the number of people
 # with the value of each people. A day with 3 people who are very flexible should be
 # considered after a day with 5 people who are very inflexible.
-#
-# Include consideration of total number of days worked?
-# Like, having someone work all 2s and someone work zero 2s isn't fair.
-# Try to make equal the number of days someone works.
-# Well, thats what's trying to be addressed by the point system!
-#
-# Add some automated testing?
 
 
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
@@ -27,12 +22,6 @@ num_solutions_found = [0]
 num_per_day = 2
 
 print_solution = False
-
-# format availability [[one persons schedule entire time],
-#                       [another persons schedule entire time],
-#                        [a third persons schedule entire time]]
-
-
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!

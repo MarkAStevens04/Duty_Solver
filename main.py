@@ -14,10 +14,10 @@ import random
 # considered after a day with 5 people who are very inflexible.
 
 
-names = ['p1', 'p2', 'p3']
-num_booked = [0, 0, 0]
+names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
 max_diff = 1
-num_found = [0]
+num_solutions_found = [0]
+num_per_day = 2
 
 
 # format availability [[one persons schedule entire time],
@@ -42,9 +42,9 @@ availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
 
-availability = [[1, 1, 2, 1, 1, 1],
-                [1, 1, 2, 1, 1, 1],
-                [1, 1, 2, 0, 0, 0],]
+# availability = [[1, 1, 2, 1, 1, 1],
+#                 [1, 1, 2, 1, 1, 1],
+#                 [1, 1, 2, 0, 0, 0],]
 
 
 # random availability
@@ -89,7 +89,7 @@ availability = [[1, 1, 2, 1, 1, 1],
 def recursive_solver(availability, index, names, final_availability):
     # update avg to reflect number of 2 point days and 1 point days
     # avg = (len(availability[0]) * 2) / len(names)
-    avg = (7 * 2) / len(names)
+    # avg = (7 * 2) / len(names)
     # print(avg)
     # must be within +- avg for every name when the algo finishes!
 
@@ -200,6 +200,24 @@ def optimize_order(availability):
     return sorted_array, dict_mapping
 
 
+def calc_avg(availability):
+    # Calculates the final average number of points per person!
+    # first, calculate the total number of points a day
+    total_points = 0
+    for i in range(len(availability[0])):
+        # i is the index for each day
+        # x is the index for each person
+        x = 0
+        while availability[x][i] == 0:
+            x += 1
+        total_points += availability[x][i]
+
+    # avg # of points per person is the total number of points, divided by the number of ppl.
+    # multipy total_points by num_per_day b/c points required increases based on number of
+    # ppl on call each day.
+    avg = (num_per_day * total_points) / len(availability)
+    return avg
+
 
 
 
@@ -228,6 +246,9 @@ if __name__ == "__main__":
         print(row)
     print(f'---')
 
+    avg = calc_avg(availability)
+    num_booked = [0] * len(availability)
+    print(f'avg points: {avg}')
     if not recursive_solver(availability, 0, names, final_availability):
         print("----- no valid combo found! -----")
 
@@ -236,3 +257,10 @@ if __name__ == "__main__":
         print(row)
     # print(final_availability)
     # print(num_found[0])
+    print(f"---")
+    availability = [[1, 1, 2, 0, 0, 0],
+                    [0, 0, 2, 1, 1, 1],
+                    [1, 1, 0, 1, 1, 1]]
+
+
+

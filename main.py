@@ -26,11 +26,13 @@ max_diff = 10
 num_solutions_found = [0]
 num_per_day = 2
 
-print_solution = True
+print_solution = False
 
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
 #                        [a third persons schedule entire time]]
+
+
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!
@@ -53,11 +55,9 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
             # quickly terminates bad runs!
             # bad run if we know this current iteration is already off.
-            # ----- OPTIMIZATION -------
-            # put this in the recursive call!
-            # Never call a run if it's doomed from the start!
             if num_booked[p1_i] > avg + max_diff or num_booked[p2_i] > avg + max_diff:
                 return False
+
 
             p1_availability = availability[p1_i][index]
             p2_availability = availability[p2_i][index]
@@ -74,17 +74,21 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 num_booked[p2_i] = num_booked[p2_i] + p2_availability
 
                 # recursive call...
-                found = recursive_solver(availability, index+1, finished_availability, num_booked)
+                # only do the recursive call if our guess doesn't put us in a bad state.
+                if num_booked[p1_i] <= avg + max_diff and num_booked[p2_i] <= avg + max_diff:
+                    found = recursive_solver(availability, index+1, finished_availability, num_booked)
 
-                if found:
-                    # recursive call found a solution, so we did too!
-                    return True
-                else:
-                    # backtrack...
-                    finished_availability[p1_i][index] = 0
-                    finished_availability[p2_i][index] = 0
-                    num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
-                    num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
+                    if found:
+                        # recursive call found a solution, so we did too!
+                        return True
+                # only get here if no solution was found
+                # or if we started off by finding an error!
+
+                # backtrack...
+                finished_availability[p1_i][index] = 0
+                finished_availability[p2_i][index] = 0
+                num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
+                num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
 
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
@@ -300,11 +304,9 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
 
 
 if __name__ == "__main__":
-    availability = [[1, 2, 3, 4, 5, 6],
-                    [1, 2, 3, 4, 5, 6],
-                    [1, 2, 3, 0, 0, 0],
-                    [1, 2, 0, 0, 0, 0],
-                    [1, 0, 0, 0, 0, 0]]
+    availability = [[1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 0, 0, 0]]
 
     print(f'Num solutions found: {main_run(num_per_day, availability)}')
 

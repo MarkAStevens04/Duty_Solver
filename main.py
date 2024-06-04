@@ -83,6 +83,10 @@ def recursive_solver(availability, index, names, final_availability):
     for p1_i in range(len(availability)):
         for p2_i in range(p1_i + 1, len(availability)):
             # quickly terminates bad runs!
+            # bad run if we know this current iteration is already off.
+            # ----- OPTIMIZATION -------
+            # put this in the recursive call!
+            # Never call a run if it's doomed from the start!
             if num_booked[p1_i] > avg + max_diff or num_booked[p2_i] > avg + max_diff:
                 return False
             # print(index)

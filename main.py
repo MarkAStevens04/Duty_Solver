@@ -26,21 +26,20 @@ max_diff = 10
 num_solutions_found = [0]
 num_per_day = 2
 
+print_solution = False
 
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
 #                        [a third persons schedule entire time]]
-# availability = [[1, 1, 1, 1, 0],
-#                 [1, 1, 0, 1, 1],
-#                 [1, 1, 1, 0, 1]]
 
-availability = [[1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 0, 0, 0],]
 
-availability = [[1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 0, 0, 0]]
+# availability = [[1, 1, 1, 1, 1, 1],
+#                 [1, 1, 1, 1, 1, 1],
+#                 [1, 1, 1, 0, 0, 0],]
+#
+# availability = [[1, 1, 1, 1, 1, 1],
+#                 [1, 1, 1, 1, 1, 1],
+#                 [1, 1, 1, 0, 0, 0]]
 
 # this one is hard!
 # availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -49,11 +48,11 @@ availability = [[1, 1, 1, 1, 1, 1],
 #                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
 #                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
 
-availability = [[1, 2, 3, 4, 5, 6],
-                [1, 2, 3, 4, 5, 6],
-                [1, 2, 3, 0, 0, 0],
-                [1, 2, 0, 0, 0, 0],
-                [1, 0, 0, 0, 0, 0]]
+# availability = [[1, 2, 3, 4, 5, 6],
+#                 [1, 2, 3, 4, 5, 6],
+#                 [1, 2, 3, 0, 0, 0],
+#                 [1, 2, 0, 0, 0, 0],
+#                 [1, 0, 0, 0, 0, 0]]
 
 
 # random availability
@@ -95,7 +94,7 @@ availability = [[1, 2, 3, 4, 5, 6],
 #                 [1, 1, 1],
 #                 [1, 1, 1]]
 
-def recursive_solver(availability, index, names, final_availability):
+def recursive_solver(availability, index, names, finished_availability, num_booked):
     # update avg to reflect number of 2 point days and 1 point days
     # avg = (len(availability[0]) * 2) / len(names)
     # avg = (7 * 2) / len(names)
@@ -111,7 +110,7 @@ def recursive_solver(availability, index, names, final_availability):
                 #     print(row)
                 return False
         # found a valid solution. Printing!
-        return found_solution()
+        return found_solution(finished_availability)
 
 
     for p1_i in range(len(availability)):
@@ -130,34 +129,41 @@ def recursive_solver(availability, index, names, final_availability):
             if p1_availability != 0 and p2_availability != 0:
                 # found a successful pair!
                 # Update final availability to reflect number of points
-                final_availability[p1_i][index] = availability[p1_i][index]
-                final_availability[p2_i][index] = availability[p2_i][index]
+                finished_availability[p1_i][index] = availability[p1_i][index]
+                finished_availability[p2_i][index] = availability[p2_i][index]
 
                 # add number of points to the score
                 num_booked[p1_i] = num_booked[p1_i] + availability[p1_i][index]
                 num_booked[p2_i] = num_booked[p2_i] + availability[p2_i][index]
                 # print(final_availability)
-                found = recursive_solver(availability, index+1, names, final_availability)
+                found = recursive_solver(availability, index+1, names, finished_availability, num_booked)
                 # print(f"passing...")
                 if found:
                     return True
                 else:
                     # backtrack...
-                    final_availability[p1_i][index] = 0
-                    final_availability[p2_i][index] = 0
+                    finished_availability[p1_i][index] = 0
+                    finished_availability[p2_i][index] = 0
                     num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
                     num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
 
     return False
 
 
-def found_solution():
+def found_solution(finished_availability):
     final_availability = de_order_ppl(finished_availability, person_mapping)
     final_availability = de_order_days(final_availability, day_mapping)
     # Handles what should happen when the final solution is found!
-    for r in range(len(final_availability)):
-        print(f"{final_availability[r]}: {num_booked[r]}")
-    print(f"---")
+    if print_solution:
+        for r in range(len(final_availability)):
+            print(f"{final_availability[r]}: {num_booked[r]}")
+        print(f"---")
+
+    global got_solution
+    global num_found
+    got_solution = True
+    num_found += 1
+
 
 
     # return False means keep searching
@@ -312,57 +318,48 @@ def calc_avg(availability):
 
 
 
+def main_run(names, num_per_day, availability):
+    # Main running harness!
+
+    finished_availability = create_finished_availability(availability)
+    global person_mapping
+    global day_mapping
+    global avg
+    global num_booked
+    global got_solution
+    global num_found
+
+    availability, person_mapping = order_ppl(availability)
+    availability, day_mapping = order_days(availability)
+    avg = calc_avg(availability)
+    num_booked = [0] * len(availability)
+    got_solution = False
+    num_found = 0
+
+    # recursive call
+    recursive_solver(availability, 0, names, finished_availability, num_booked)
+
+    if not got_solution:
+        print("----- no valid combo found! -----")
+        return False
+    else:
+        print("-*-*-*- solutions found! -*-*-*-")
+        return num_found
+
+
 
 
 
 if __name__ == "__main__":
-    # final_availability = [[0, 0, 0, 0, 0],
-    #                       [0, 0, 0, 0, 0],
-    #                       [0, 0, 0, 0, 0]]
+    availability = [[1, 2, 3, 4, 5, 6],
+                    [1, 2, 3, 4, 5, 6],
+                    [1, 2, 3, 0, 0, 0],
+                    [1, 2, 0, 0, 0, 0],
+                    [1, 0, 0, 0, 0, 0]]
 
-    # final_availability = [[0, 0, 0, 0, 0, 0],
-    #                       [0, 0, 0, 0, 0, 0],
-    #                       [0, 0, 0, 0, 0, 0]]
-
-    # final_availability = [[0, 0, 0],
-    #                       [0, 0, 0],
-    #                       [0, 0, 0]]
-
-    # print(f'final availability:')
-    finished_availability = create_finished_availability(availability)
-    # print()
-    # print(f"---")
-    print(f'---')
-    availability, person_mapping = order_ppl(availability)
-    availability, day_mapping = order_days(availability)
-    # availability, day_mapping = order_days(availability)
-    for row in availability:
-        print(row)
-    print(f'---')
-
-    avg = calc_avg(availability)
-    num_booked = [0] * len(availability)
-    print(f'avg points: {avg}')
-    if not recursive_solver(availability, 0, names, finished_availability):
-        print("----- no valid combo found! -----")
+    print(f'Num solutions found: {main_run(names, num_per_day, availability)}')
 
 
-    for row in finished_availability:
-        print(row)
-
-    final_availability = de_order_ppl(availability, person_mapping)
-    print(f'---')
-    for r in range(len(final_availability)):
-        print(final_availability[r])
-
-    print(f'*********')
-    
-    for row in availability:
-        print(row)
-    print(f'-*-*-*-*-*-')
-    final_availability = de_order_days(availability, day_mapping)
-    for row in final_availability:
-        print(row)
 
 
 

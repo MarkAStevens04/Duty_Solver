@@ -1,3 +1,5 @@
+import random
+
 
 names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
 num_booked = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -27,6 +29,20 @@ availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
 
+
+availability = []
+days = 12
+ppl = 8
+for p in range(ppl):
+    row = []
+    for day in range(days):
+        if random.random() > 0.8:
+            row.append(0)
+        else:
+            row.append(1)
+    availability.append(row)
+
+
 # this is the solution!
 # availability =[[0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
 #                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
@@ -38,14 +54,14 @@ availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 #                [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
 # this one is extra hard!
-availability =[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-               [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-               [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-               [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-               [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-               [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-               [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-               [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+# availability =[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+#                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+#                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+#                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+#                [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+#                [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+#                [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
 # availability = [[1, 1, 1],
 #                 [1, 1, 1],
@@ -186,12 +202,12 @@ if __name__ == "__main__":
 
     # print(f'final availability:')
     final_availability = find_final_availability(availability)
-    # for row in final_availability:
-    #     print(row)
     # print()
     # print(f"---")
     print(f'---')
     availability, dict_mapping = optimize_order(availability)
+    for row in availability:
+        print(row)
     print(f'---')
 
     if not recursive_solver(availability, 0, names, final_availability):

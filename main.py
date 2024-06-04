@@ -14,9 +14,9 @@ import random
 # considered after a day with 5 people who are very inflexible.
 
 
-names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
-num_booked = [0, 0, 0, 0, 0, 0, 0, 0]
-max_diff = 0.5
+names = ['p1', 'p2', 'p3']
+num_booked = [0, 0, 0]
+max_diff = 1
 num_found = [0]
 
 
@@ -42,18 +42,24 @@ availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
 
+availability = [[1, 1, 2, 1, 1, 1],
+                [1, 1, 2, 1, 1, 1],
+                [1, 1, 2, 0, 0, 0],]
 
-availability = []
-days = 12
-ppl = 8
-for p in range(ppl):
-    row = []
-    for day in range(days):
-        if random.random() > 0.8:
-            row.append(0)
-        else:
-            row.append(1)
-    availability.append(row)
+
+# random availability
+# availability = []
+# days = 12
+# ppl = 8
+# frequency = 0.8
+# for p in range(ppl):
+#     row = []
+#     for day in range(days):
+#         if random.random() > frequency:
+#             row.append(0)
+#         else:
+#             row.append(1)
+#     availability.append(row)
 
 
 # this is the solution!
@@ -81,13 +87,9 @@ for p in range(ppl):
 #                 [1, 1, 1]]
 
 def recursive_solver(availability, index, names, final_availability):
-    # for now, ignore number of days. We'll come back to that.
-    #
-    # base case:
-    #   - found 2 names
-    # recurse:
-
-    avg = (len(availability[0]) * 2) / len(names)
+    # update avg to reflect number of 2 point days and 1 point days
+    # avg = (len(availability[0]) * 2) / len(names)
+    avg = (7 * 2) / len(names)
     # print(avg)
     # must be within +- avg for every name when the algo finishes!
 
@@ -122,12 +124,15 @@ def recursive_solver(availability, index, names, final_availability):
             # iterates through every possible combination of names
             p1_availability = availability[p1_i][index]
             p2_availability = availability[p2_i][index]
-            if p1_availability == 1 and p2_availability == 1:
+            if p1_availability != 0 and p2_availability != 0:
                 # found a successful pair!
-                final_availability[p1_i][index] = 1
-                final_availability[p2_i][index] = 1
-                num_booked[p1_i] = num_booked[p1_i] + 1
-                num_booked[p2_i] = num_booked[p2_i] + 1
+                # Update final availability to reflect number of points
+                final_availability[p1_i][index] = availability[p1_i][index]
+                final_availability[p2_i][index] = availability[p2_i][index]
+
+                # add number of points to the score
+                num_booked[p1_i] = num_booked[p1_i] + availability[p1_i][index]
+                num_booked[p2_i] = num_booked[p2_i] + availability[p2_i][index]
                 # print(final_availability)
                 found = recursive_solver(availability, index+1, names, final_availability)
                 # print(f"passing...")
@@ -137,8 +142,8 @@ def recursive_solver(availability, index, names, final_availability):
                     # backtrack...
                     final_availability[p1_i][index] = 0
                     final_availability[p2_i][index] = 0
-                    num_booked[p1_i] = num_booked[p1_i] - 1
-                    num_booked[p2_i] = num_booked[p2_i] - 1
+                    num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
+                    num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
 
     return False
 

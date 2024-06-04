@@ -1,5 +1,18 @@
 import random
 
+# Sort days based on estimated "difficulty" (entropy?).
+# So like, easy days have many options, and they should be solved last.
+# hard days have few options, and should be solved first.
+#
+# The difficulty could be based on the number of people available that day.
+# Or the difficulty could be a weighted sum of the
+# people available that day, with the weights corresponding
+# to the "flexibility" of any person. Flexible people give low weight, while
+# inflexible people give high weight. high value means more difficulty. Hmm re-think
+# the higher or lower part, but this is a good idea! Balance the number of people
+# with the value of each people. A day with 3 people who are very flexible should be
+# considered after a day with 5 people who are very inflexible.
+
 
 names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
 num_booked = [0, 0, 0, 0, 0, 0, 0, 0]

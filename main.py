@@ -12,10 +12,17 @@ import random
 # the higher or lower part, but this is a good idea! Balance the number of people
 # with the value of each people. A day with 3 people who are very flexible should be
 # considered after a day with 5 people who are very inflexible.
+#
+# Include consideration of total number of days worked?
+# Like, having someone work all 2s and someone work zero 2s isn't fair.
+# Try to make equal the number of days someone works.
+# Well, thats what's trying to be addressed by the point system!
+#
+# Add some automated testing?
 
 
-names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
-max_diff = 1
+names = ['p1', 'p2', 'p3', 'p4', 'p5']
+max_diff = 10
 num_solutions_found = [0]
 num_per_day = 2
 
@@ -36,15 +43,17 @@ availability = [[1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 0, 0, 0]]
 
 # this one is hard!
-availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 0, 0, 1, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
+# availability = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+#                 [1, 1, 1, 1, 1, 1, 0, 0, 1, 1],
+#                 [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+#                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+#                 [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
 
-# availability = [[1, 1, 2, 1, 1, 1],
-#                 [1, 1, 2, 1, 1, 1],
-#                 [1, 1, 2, 0, 0, 0],]
+availability = [[1, 2, 3, 4, 5, 6],
+                [1, 2, 3, 4, 5, 6],
+                [1, 2, 3, 0, 0, 0],
+                [1, 2, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 0]]
 
 
 # random availability
@@ -102,13 +111,7 @@ def recursive_solver(availability, index, names, final_availability):
                 #     print(row)
                 return False
         # found a valid solution. Printing!
-        for r in range(len(final_availability)):
-            print(f"{final_availability[r]}:{num_booked[r]}")
-        print(f"---")
-        # return True
-        # num_found[0] = num_found[0] + 1
-        # print(num_found[0])
-        return False
+        return found_solution()
 
 
     for p1_i in range(len(availability)):
@@ -148,7 +151,23 @@ def recursive_solver(availability, index, names, final_availability):
     return False
 
 
-def find_final_availability(availability):
+def found_solution():
+    final_availability = de_order_ppl(finished_availability, person_mapping)
+    final_availability = de_order_days(final_availability, day_mapping)
+    # Handles what should happen when the final solution is found!
+    for r in range(len(final_availability)):
+        print(f"{final_availability[r]}: {num_booked[r]}")
+    print(f"---")
+
+
+    # return False means keep searching
+    # return True means stop after finding this solution
+    return False
+
+
+def create_finished_availability(availability):
+    # creates the final_availability base data structure
+    # Essentially, just a copy of availability, but filled with 0s.
     num_ppl = len(availability)
     num_days = len(availability[0])
     final = []
@@ -160,7 +179,7 @@ def find_final_availability(availability):
     return final
 
 
-def optimize_order(availability):
+def order_ppl(availability):
     # orders people based on their availability
     #
     # returns the new availability, alongside a dict_mapping.
@@ -198,6 +217,79 @@ def optimize_order(availability):
     # for row in sorted_array:
     #     print(row)
     return sorted_array, dict_mapping
+
+def de_order_ppl(finished_availability, availability_dict):
+    # un-orders the availability of ppl
+    # creates a copy of the array, does not modify original
+
+    final_availability = []
+    for r in range(len(finished_availability)):
+        i = availability_dict[r]
+        final_availability.append(finished_availability[i])
+    return final_availability
+
+
+def calc_difficulty(availability, index):
+    # Calculates the difficulty of a given day!
+    # small difficulty = very difficult
+    difficulty = 0
+    for p in range(len(availability)):
+        if availability[p][index] != 0:
+            difficulty += 1
+    return difficulty
+
+def order_days(availability):
+    # orders days based on their "difficulty".
+    # difficult days come first, easy days come last.
+    # Difficult days have very little availability
+    # Easy have have a lot of availability.
+    # Solving easy days first allows us to do the hard part as few times as possible.
+    # Otherwise, our algorithm would explore a lot of solutions, all which fail
+    # for the same reason.
+
+    diff_tuples = []
+    orig_mapping = {}
+    # orig_mapping goes {new_index: previous_index}
+    # think "the row at index "key" came from the row at index "value"
+    # dict_mapping goes {new_index: previous_index}
+
+    # d is day index
+    for d in range(len(availability[0])):
+        # small difficulty = very difficult
+        difficulty = calc_difficulty(availability, d)
+        diff_tuples.append((difficulty, d))
+
+    diff_tuples.sort()
+    for t in range(len(diff_tuples)):
+        orig_mapping[t] = diff_tuples[t][1]
+
+    # reconstruct the availability
+    new_availability = []
+    for p in range(len(availability)):
+        new_availability.append([])
+
+    for d in range(len(availability[0])):
+        for p in range(len(availability)):
+            orig_index = orig_mapping[d]
+            new_availability[p].append(availability[p][orig_index])
+
+    return new_availability, orig_mapping
+
+def de_order_days(finished_availability, day_mapping):
+    # takes the day_mapping and returns the days to their original order
+    final_availability = []
+    for p in range(len(finished_availability)):
+        final_availability.append([0] * len(finished_availability[0]))
+
+    for d in range(len(finished_availability[0])):
+        orig_index = day_mapping[d]
+        for p in range(len(finished_availability)):
+            final_availability[p][orig_index] = finished_availability[p][d]
+
+    return final_availability
+
+
+
 
 
 def calc_avg(availability):
@@ -237,11 +329,13 @@ if __name__ == "__main__":
     #                       [0, 0, 0]]
 
     # print(f'final availability:')
-    final_availability = find_final_availability(availability)
+    finished_availability = create_finished_availability(availability)
     # print()
     # print(f"---")
     print(f'---')
-    availability, dict_mapping = optimize_order(availability)
+    availability, person_mapping = order_ppl(availability)
+    availability, day_mapping = order_days(availability)
+    # availability, day_mapping = order_days(availability)
     for row in availability:
         print(row)
     print(f'---')
@@ -249,18 +343,27 @@ if __name__ == "__main__":
     avg = calc_avg(availability)
     num_booked = [0] * len(availability)
     print(f'avg points: {avg}')
-    if not recursive_solver(availability, 0, names, final_availability):
+    if not recursive_solver(availability, 0, names, finished_availability):
         print("----- no valid combo found! -----")
 
 
+    for row in finished_availability:
+        print(row)
+
+    final_availability = de_order_ppl(availability, person_mapping)
+    print(f'---')
+    for r in range(len(final_availability)):
+        print(final_availability[r])
+
+    print(f'*********')
+    
+    for row in availability:
+        print(row)
+    print(f'-*-*-*-*-*-')
+    final_availability = de_order_days(availability, day_mapping)
     for row in final_availability:
         print(row)
-    # print(final_availability)
-    # print(num_found[0])
-    print(f"---")
-    availability = [[1, 1, 2, 0, 0, 0],
-                    [0, 0, 2, 1, 1, 1],
-                    [1, 1, 0, 1, 1, 1]]
+
 
 
 

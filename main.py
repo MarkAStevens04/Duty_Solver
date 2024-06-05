@@ -1,11 +1,8 @@
 import excel_processing as ep
-import time
 
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
 #                        [a third persons schedule entire time]]
-
-
 
 # - Ideas -
 # The difficulty could be based on the number of people available that day.
@@ -17,17 +14,18 @@ import time
 # with the value of each people. A day with 3 people who are very flexible should be
 # considered after a day with 5 people who are very inflexible.
 
-
-# names = ['p1', 'p2', 'p3', 'p4', 'p5']
-max_diff = 1.5
-max_entropy = 10000
-entropy_spread = 780
-num_solutions_found = [0]
+# --- setup ---
 num_per_day = 2
-
 print_solution = True
 optimize_entropy = True
-optimizing = True
+
+# --- hyper-parameters ---
+# max_diff: maximum difference in number of points between som1 and the average
+# max_entropy: higher val means greater tolerance of 2 consecutive days.
+# entropy_spread: higher val means greater tolerance of going long periods without duty
+max_diff = 1.5
+max_entropy = 0
+entropy_spread = 780
 
 
 def check_valid(fin_av, p_index, t_left):
@@ -46,10 +44,11 @@ def check_valid(fin_av, p_index, t_left):
     # if r_index is 35, will only check 36th column
     total_left = t_left
     if num_booked[p_index] < avg - max_diff - total_left:
-        # print(f'** ending early')
         valid = False
 
+    # if we're optimizing the entropy, do that!
     if optimize_entropy:
+        # start by sorting back the days to their original order
         final_availability = de_order_ppl(fin_av, person_mapping)
         final_availability = de_order_days(final_availability, day_mapping)
 
@@ -63,10 +62,6 @@ def calc_spread_out(availability):
     # calc a score based on how spread out a final set of days are!
     # same as calc_entropy but with added functions
     total_cost = 0
-    max_in_row = 2
-    # print(f'-----')
-    # for row in availability:
-    #     print(row)
 
     for p in range(len(availability)):
         run = 0
@@ -106,50 +101,46 @@ def calc_entropy(availability):
     # add 1 every time a given person has 2 consecutive shifts.
     # for each person, end by squaring the value
     total_cost = 0
-    max_in_row = 2
-    # print(f'-----')
-    # for row in availability:
-    #     print(row)
+    max_run = 2
 
     for p in range(len(availability)):
+        # run is the length of the run
+        # person cost is the sum of lengths of all runs for this person
         run = 0
         person_cost = 0
 
-        z_run_v = 0
-        z_total_cost = 0
+        # for every day in this block
         for c in range(len(availability[0])):
+            # if the day is not 0, our run continues
             if availability[p][c] != 0:
                 run += 1
-
-                # print(f'run_length: {z_run_v}')
-                z_total_cost += z_run_v ** 2
-                z_run_v = 0
             else:
-                z_run_v += 1
-
+                # the run has been broken b/c we reached a 0!
+                #
+                # if the run was greater than 1 (so an actual run), add the
+                # length of the run to the person_cost.
                 if run > 1:
                     person_cost += run
-                # if run != 0:
-                #     person_cost += run
-                if run >= 2:
+                if run >= max_run:
+                    # if our run was greater than the max run, shoot up the entropy.
                     total_cost += 100000000000000
+                # reset our run
                 run = 0
-
-        # print(f'person {p}, person_cost {person_cost}')
+        # square the length of all runs, and multiply by 1000
         person_cost = (person_cost ** 2) * 1000
-        # person_cost += z_total_cost
-        # print(f'person {p} new cost {person_cost}')
-        # print(f'person {p}, zero r cost {z_total_cost}')
-
         total_cost += person_cost
+
     return total_cost
 
 
 def recursive_solver(availability, index, finished_availability, num_booked):
-    # must be within +- avg for every name when the algo finishes!
+    # The main recursive call for our solver!
+    #
+    # number of points must be within the max_diff of the average
+    # for the solution to be valid!
 
+    # if we're past the final column...
     if index >= len(availability[0]):
-        # make sure every person is within range!
         for person_i in range(len(num_booked)):
             if num_booked[person_i] < avg - max_diff or num_booked[person_i] > avg + max_diff:
                 # exists a person who is outside the range!

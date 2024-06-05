@@ -1,4 +1,5 @@
 import excel_processing as ep
+import time
 
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
@@ -20,12 +21,22 @@ import excel_processing as ep
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
 max_diff = 1.5
 max_entropy = 10000
-entropy_spread = 850
+entropy_spread = 780
 num_solutions_found = [0]
 num_per_day = 2
 
-print_solution = True
+print_solution = False
 optimize_entropy = True
+optimizing = True
+
+# threshhold is number of solutions found before we call our solution
+# good enough!
+#
+# timeout is max length of time before we call it good enough
+threshhold = 10
+timeout = 30
+# ti
+
 
 def check_valid(fin_av, p_index, t_left):
     # we assume the current finished_availability is valid,
@@ -154,6 +165,11 @@ def recursive_solver(availability, index, finished_availability, num_booked):
     #             # exists a person who is outside the range!
     #             print(f'error at person {person_i}, {num_booked[person_i]}')
     #             print(f'avg: {avg}, max_diff {max_diff}')
+    global optimizing
+    global num_found
+    if optimizing and num_found >= threshhold:
+        return False
+
 
     if index >= len(availability[0]):
         # make sure every person is within range!
@@ -228,7 +244,7 @@ def found_solution(finished_availability):
     if optimize_entropy:
         e = calc_entropy(final_availability)
         e_s = calc_spread_out(final_availability)
-        print(f'entropy_spread: {e_s}')
+        # print(f'entropy_spread: {e_s}')
         # print(f'entropy of soln: {e}')
         if e > max_entropy or e_s > entropy_spread:
             # print(f'skipped entropy')
@@ -422,6 +438,10 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     global end_quick
     global max_diff
     global n_iter
+    global optimizing
+    global entropy_spread
+    global print_solution
+    global timeout
 
     availability, person_mapping = order_ppl(availability)
     availability, day_mapping = order_days(availability)
@@ -436,14 +456,44 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
 
     print(f'--- sorted ---')
     # recursive call
-    recursive_solver(availability, 0, finished_availability, num_booked)
 
-    if not got_solution:
-        print("----- no valid combo found! -----")
-        return False
-    else:
-        print("-*-*-*- solutions found! -*-*-*-")
-        return num_found
+    if not optimizing:
+        recursive_solver(availability, 0, finished_availability, num_booked)
+
+        if not got_solution:
+            print("----- no valid combo found! -----")
+            return False
+        else:
+            print("-*-*-*- solutions found! -*-*-*-")
+            return num_found
+    if optimizing:
+        print_solution = False
+        optimized = False
+        start = time.time()
+        while not optimized:
+            num_found = 0
+            finished_availability = create_finished_availability(availability)
+            recursive_solver(availability, 0, finished_availability, num_booked)
+            print(f'adjusting...')
+            time_diff = (time.time() - start)
+            print(f'time_diff: {time_diff}')
+            if num_found >= threshhold and time_diff < timeout:
+                print(f'decreasing')
+                # if max_entropy > 0:
+                #     max_entropy = max_entropy * 0.5
+                if entropy_spread > 0:
+                    entropy_spread += -1
+            else:
+                print_solution = True
+                entropy_spread += 1
+                num_found = 0
+                finished_availability = create_finished_availability(availability)
+                recursive_solver(availability, 0, finished_availability, num_booked)
+
+                # slowly increase the entropy spread
+                entropy_spread += 10
+            print(f'new entropy spread: {entropy_spread}')
+            print()
 
 
 

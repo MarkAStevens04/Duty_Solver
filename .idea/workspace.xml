@@ -31,19 +31,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.UnitTests.executor": "Run",
-    "Python.Excel Tests.executor": "Run",
-    "Python.Run Main.executor": "Run",
-    "Python.Run Tests.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.test_excel_reading.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "excel__integration",
-    "last_opened_file_path": "/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.UnitTests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Excel Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_excel_reading.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;excel__integration&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/Excel Files" />

@@ -21,7 +21,7 @@ import time
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
 max_diff = 1.5
 max_entropy = 10000
-entropy_spread = 780
+entropy_spread = 790
 num_solutions_found = [0]
 num_per_day = 2
 

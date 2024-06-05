@@ -19,7 +19,8 @@ import excel_processing as ep
 
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
 max_diff = 1.5
-max_entropy = 640
+max_entropy = 10000
+entropy_spread = 850
 num_solutions_found = [0]
 num_per_day = 2
 
@@ -55,6 +56,48 @@ def check_valid(fin_av, p_index, t_left):
 
     return valid
 
+def calc_spread_out(availability):
+    # calc a score based on how spread out a final set of days are!
+    # same as calc_entropy but with added functions
+    total_cost = 0
+    max_in_row = 2
+    # print(f'-----')
+    # for row in availability:
+    #     print(row)
+
+    for p in range(len(availability)):
+        run = 0
+        person_cost = 0
+
+        z_run_v = 0
+        z_total_cost = 0
+        for c in range(len(availability[0])):
+            if availability[p][c] != 0:
+                run += 1
+
+                # print(f'run_length: {z_run_v}')
+                z_total_cost += z_run_v ** 2
+                z_run_v = 0
+            else:
+                z_run_v += 1
+
+                if run > 1:
+                    person_cost += run
+                # if run != 0:
+                #     person_cost += run
+                if run >= 2:
+                    total_cost += 100000000000000
+                run = 0
+
+        # print(f'person {p}, person_cost {person_cost}')
+        person_cost = (person_cost ** 2) * 1000
+        person_cost += z_total_cost
+        # # print(f'person {p} new cost {person_cost}')
+        # print(f'person {p}, zero r cost {z_total_cost}')
+
+        total_cost += person_cost
+    return total_cost
+
 def calc_entropy(availability):
     # calc a score based on how bad a given solution is.
     # add 1 every time a given person has 2 consecutive shifts.
@@ -68,10 +111,19 @@ def calc_entropy(availability):
     for p in range(len(availability)):
         run = 0
         person_cost = 0
+
+        z_run_v = 0
+        z_total_cost = 0
         for c in range(len(availability[0])):
             if availability[p][c] != 0:
                 run += 1
+
+                # print(f'run_length: {z_run_v}')
+                z_total_cost += z_run_v ** 2
+                z_run_v = 0
             else:
+                z_run_v += 1
+
                 if run > 1:
                     person_cost += run
                 # if run != 0:
@@ -81,8 +133,11 @@ def calc_entropy(availability):
                 run = 0
 
         # print(f'person {p}, person_cost {person_cost}')
-        person_cost = person_cost ** 2
+        person_cost = (person_cost ** 2) * 1000
+        # person_cost += z_total_cost
         # print(f'person {p} new cost {person_cost}')
+        # print(f'person {p}, zero r cost {z_total_cost}')
+
         total_cost += person_cost
     return total_cost
 
@@ -172,8 +227,10 @@ def found_solution(finished_availability):
     global optimize_entropy
     if optimize_entropy:
         e = calc_entropy(final_availability)
+        e_s = calc_spread_out(final_availability)
+        print(f'entropy_spread: {e_s}')
         # print(f'entropy of soln: {e}')
-        if e > max_entropy:
+        if e > max_entropy or e_s > entropy_spread:
             # print(f'skipped entropy')
             return False
         else:

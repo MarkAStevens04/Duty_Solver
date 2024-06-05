@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="" />
+    <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Excel_Files/Test.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/Excel_Files/Test.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_excel_reading.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_excel_reading.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -30,11 +34,12 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Python.Excel Tests.executor": "Run",
     "Python.Run Tests.executor": "Run",
     "Python.main.executor": "Run",
     "Python.test_excel_reading.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "excel__integration",
     "last_opened_file_path": "/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files"
   }
 }]]></component>
@@ -46,8 +51,8 @@
       <recent name="$PROJECT_DIR$/Excel_Files" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration name="Run Tests" type="PythonConfigurationType" factoryName="Python">
+  <component name="RunManager" selected="Python.Excel Tests">
+    <configuration name="Excel Tests" type="PythonConfigurationType" factoryName="Python">
       <module name="MS_Teams_Reminder" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -70,6 +75,33 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Run Main" type="PythonConfigurationType" factoryName="Python">
+      <module name="MS_Teams_Reminder" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.11 (MS_Teams_Reminder)" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.Excel Tests" />
+      <item itemvalue="Python.Run Main" />
+    </list>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

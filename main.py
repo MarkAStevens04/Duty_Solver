@@ -25,17 +25,9 @@ entropy_spread = 780
 num_solutions_found = [0]
 num_per_day = 2
 
-print_solution = False
+print_solution = True
 optimize_entropy = True
 optimizing = True
-
-# threshhold is number of solutions found before we call our solution
-# good enough!
-#
-# timeout is max length of time before we call it good enough
-threshhold = 10
-timeout = 30
-# ti
 
 
 def check_valid(fin_av, p_index, t_left):
@@ -155,21 +147,6 @@ def calc_entropy(availability):
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!
-    # print(index)
-    global n_iter
-    n_iter += 1
-    # if index >= 36:
-    #     found_solution(finished_availability)
-    #     for person_i in range(len(num_booked)):
-    #         if num_booked[person_i] < avg - max_diff or num_booked[person_i] > avg + max_diff:
-    #             # exists a person who is outside the range!
-    #             print(f'error at person {person_i}, {num_booked[person_i]}')
-    #             print(f'avg: {avg}, max_diff {max_diff}')
-    global optimizing
-    global num_found
-    if optimizing and num_found >= threshhold:
-        return False
-
 
     if index >= len(availability[0]):
         # make sure every person is within range!
@@ -227,7 +204,6 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
-    # print(n_iter)
     # print(avg)
     # found_solution(finished_availability)
     return False
@@ -437,7 +413,6 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     global num_found
     global end_quick
     global max_diff
-    global n_iter
     global optimizing
     global entropy_spread
     global print_solution
@@ -451,49 +426,20 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     num_found = 0
     end_quick = end
     max_diff = max_difference
-    n_iter = 0
 
 
     print(f'--- sorted ---')
     # recursive call
 
-    if not optimizing:
-        recursive_solver(availability, 0, finished_availability, num_booked)
+    recursive_solver(availability, 0, finished_availability, num_booked)
 
-        if not got_solution:
-            print("----- no valid combo found! -----")
-            return False
-        else:
-            print("-*-*-*- solutions found! -*-*-*-")
-            return num_found
-    if optimizing:
-        print_solution = False
-        optimized = False
-        start = time.time()
-        while not optimized:
-            num_found = 0
-            finished_availability = create_finished_availability(availability)
-            recursive_solver(availability, 0, finished_availability, num_booked)
-            print(f'adjusting...')
-            time_diff = (time.time() - start)
-            print(f'time_diff: {time_diff}')
-            if num_found >= threshhold and time_diff < timeout:
-                print(f'decreasing')
-                # if max_entropy > 0:
-                #     max_entropy = max_entropy * 0.5
-                if entropy_spread > 0:
-                    entropy_spread += -1
-            else:
-                print_solution = True
-                entropy_spread += 1
-                num_found = 0
-                finished_availability = create_finished_availability(availability)
-                recursive_solver(availability, 0, finished_availability, num_booked)
+    if not got_solution:
+        print("----- no valid combo found! -----")
+        return False
+    else:
+        print("-*-*-*- solutions found! -*-*-*-")
+        return num_found
 
-                # slowly increase the entropy spread
-                entropy_spread += 10
-            print(f'new entropy spread: {entropy_spread}')
-            print()
 
 
 

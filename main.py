@@ -1,7 +1,9 @@
+import excel_processing as ep
+import time
+
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
 #                        [a third persons schedule entire time]]
-
 
 
 
@@ -17,14 +19,157 @@
 
 
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
-max_diff = 10
+max_diff = 1.5
+max_entropy = 10000
+entropy_spread = 780
 num_solutions_found = [0]
 num_per_day = 2
 
 print_solution = False
+optimize_entropy = True
+optimizing = True
+
+# threshhold is number of solutions found before we call our solution
+# good enough!
+#
+# timeout is max length of time before we call it good enough
+threshhold = 10
+timeout = 30
+# ti
+
+
+def check_valid(fin_av, p_index, t_left):
+    # we assume the current finished_availability is valid,
+    # and we try to find if it's not!
+    #
+    # p_index is index of person
+    # r_index is index of current row
+
+    valid = True
+    if num_booked[p_index] > avg + max_diff:
+        valid = False
+
+    # if in the best case, we still cannot sum to get this current person
+    # to a high enough score, we know its not valid.
+    # if r_index is 35, will only check 36th column
+    total_left = t_left
+    if num_booked[p_index] < avg - max_diff - total_left:
+        # print(f'** ending early')
+        valid = False
+
+    if optimize_entropy:
+        final_availability = de_order_ppl(fin_av, person_mapping)
+        final_availability = de_order_days(final_availability, day_mapping)
+
+        e = calc_entropy(final_availability)
+        if e > max_entropy:
+            valid = False
+
+    return valid
+
+def calc_spread_out(availability):
+    # calc a score based on how spread out a final set of days are!
+    # same as calc_entropy but with added functions
+    total_cost = 0
+    max_in_row = 2
+    # print(f'-----')
+    # for row in availability:
+    #     print(row)
+
+    for p in range(len(availability)):
+        run = 0
+        person_cost = 0
+
+        z_run_v = 0
+        z_total_cost = 0
+        for c in range(len(availability[0])):
+            if availability[p][c] != 0:
+                run += 1
+
+                # print(f'run_length: {z_run_v}')
+                z_total_cost += z_run_v ** 2
+                z_run_v = 0
+            else:
+                z_run_v += 1
+
+                if run > 1:
+                    person_cost += run
+                # if run != 0:
+                #     person_cost += run
+                if run >= 2:
+                    total_cost += 100000000000000
+                run = 0
+
+        # print(f'person {p}, person_cost {person_cost}')
+        person_cost = (person_cost ** 2) * 1000
+        person_cost += z_total_cost
+        # # print(f'person {p} new cost {person_cost}')
+        # print(f'person {p}, zero r cost {z_total_cost}')
+
+        total_cost += person_cost
+    return total_cost
+
+def calc_entropy(availability):
+    # calc a score based on how bad a given solution is.
+    # add 1 every time a given person has 2 consecutive shifts.
+    # for each person, end by squaring the value
+    total_cost = 0
+    max_in_row = 2
+    # print(f'-----')
+    # for row in availability:
+    #     print(row)
+
+    for p in range(len(availability)):
+        run = 0
+        person_cost = 0
+
+        z_run_v = 0
+        z_total_cost = 0
+        for c in range(len(availability[0])):
+            if availability[p][c] != 0:
+                run += 1
+
+                # print(f'run_length: {z_run_v}')
+                z_total_cost += z_run_v ** 2
+                z_run_v = 0
+            else:
+                z_run_v += 1
+
+                if run > 1:
+                    person_cost += run
+                # if run != 0:
+                #     person_cost += run
+                if run >= 2:
+                    total_cost += 100000000000000
+                run = 0
+
+        # print(f'person {p}, person_cost {person_cost}')
+        person_cost = (person_cost ** 2) * 1000
+        # person_cost += z_total_cost
+        # print(f'person {p} new cost {person_cost}')
+        # print(f'person {p}, zero r cost {z_total_cost}')
+
+        total_cost += person_cost
+    return total_cost
+
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!
+    # print(index)
+    global n_iter
+    n_iter += 1
+    # if index >= 36:
+    #     found_solution(finished_availability)
+    #     for person_i in range(len(num_booked)):
+    #         if num_booked[person_i] < avg - max_diff or num_booked[person_i] > avg + max_diff:
+    #             # exists a person who is outside the range!
+    #             print(f'error at person {person_i}, {num_booked[person_i]}')
+    #             print(f'avg: {avg}, max_diff {max_diff}')
+    global optimizing
+    global num_found
+    if optimizing and num_found >= threshhold:
+        return False
+
 
     if index >= len(availability[0]):
         # make sure every person is within range!
@@ -36,6 +181,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
         # Every person is within range and we've recursed through every day!
         return found_solution(finished_availability)
 
+    t_left = sum_points(availability, index)
 
     for p1_i in range(len(availability)):
         for p2_i in range(p1_i + 1, len(availability)):
@@ -44,7 +190,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
             # quickly terminates bad runs!
             # bad run if we know this current iteration is already off.
-            if num_booked[p1_i] > avg + max_diff or num_booked[p2_i] > avg + max_diff:
+            if not check_valid(finished_availability, p1_i, t_left) or not check_valid(finished_availability, p2_i, t_left):
                 return False
 
 
@@ -64,7 +210,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
                 # recursive call...
                 # only do the recursive call if our guess doesn't put us in a bad state.
-                if num_booked[p1_i] <= avg + max_diff and num_booked[p2_i] <= avg + max_diff:
+                if check_valid(finished_availability, p1_i, t_left) and check_valid(finished_availability, p2_i, t_left):
                     found = recursive_solver(availability, index+1, finished_availability, num_booked)
 
                     if found:
@@ -81,23 +227,44 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
+    # print(n_iter)
+    # print(avg)
+    # found_solution(finished_availability)
     return False
+
 
 
 def found_solution(finished_availability):
     final_availability = de_order_ppl(finished_availability, person_mapping)
     final_availability = de_order_days(final_availability, day_mapping)
+
+    # next do our entropy check
+    # this significantly slows down our algo...
+    global optimize_entropy
+    if optimize_entropy:
+        e = calc_entropy(final_availability)
+        e_s = calc_spread_out(final_availability)
+        # print(f'entropy_spread: {e_s}')
+        # print(f'entropy of soln: {e}')
+        if e > max_entropy or e_s > entropy_spread:
+            # print(f'skipped entropy')
+            return False
+        else:
+            if print_solution:
+                print(f'entropy of soln: {e}')
+
     # Handles what should happen when the final solution is found!
     if print_solution:
         for r in range(len(final_availability)):
             print(f"{final_availability[r]}: {num_booked[r]}")
+
         print(f"---")
+
 
     global got_solution
     global num_found
     got_solution = True
     num_found += 1
-
 
 
     # return False means keep searching
@@ -233,20 +400,22 @@ def de_order_days(finished_availability, day_mapping):
     return final_availability
 
 
-
-
-
-def calc_avg(availability):
-    # Calculates the final average number of points per person!
-    # first, calculate the total number of points a day
+def sum_points(availability, start_index):
     total_points = 0
-    for i in range(len(availability[0])):
+    for i in range(start_index, len(availability[0])):
         # i is the index for each day
         # x is the index for each person
         x = 0
         while availability[x][i] == 0:
             x += 1
         total_points += availability[x][i]
+    return total_points
+
+
+def calc_avg(availability):
+    # Calculates the final average number of points per person!
+    # first, calculate the total number of points a day
+    total_points = sum_points(availability, 0)
 
     # avg # of points per person is the total number of points, divided by the number of ppl.
     # multipy total_points by num_per_day b/c points required increases based on number of
@@ -268,6 +437,11 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     global num_found
     global end_quick
     global max_diff
+    global n_iter
+    global optimizing
+    global entropy_spread
+    global print_solution
+    global timeout
 
     availability, person_mapping = order_ppl(availability)
     availability, day_mapping = order_days(availability)
@@ -277,16 +451,49 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     num_found = 0
     end_quick = end
     max_diff = max_difference
+    n_iter = 0
 
+
+    print(f'--- sorted ---')
     # recursive call
-    recursive_solver(availability, 0, finished_availability, num_booked)
 
-    if not got_solution:
-        print("----- no valid combo found! -----")
-        return False
-    else:
-        print("-*-*-*- solutions found! -*-*-*-")
-        return num_found
+    if not optimizing:
+        recursive_solver(availability, 0, finished_availability, num_booked)
+
+        if not got_solution:
+            print("----- no valid combo found! -----")
+            return False
+        else:
+            print("-*-*-*- solutions found! -*-*-*-")
+            return num_found
+    if optimizing:
+        print_solution = False
+        optimized = False
+        start = time.time()
+        while not optimized:
+            num_found = 0
+            finished_availability = create_finished_availability(availability)
+            recursive_solver(availability, 0, finished_availability, num_booked)
+            print(f'adjusting...')
+            time_diff = (time.time() - start)
+            print(f'time_diff: {time_diff}')
+            if num_found >= threshhold and time_diff < timeout:
+                print(f'decreasing')
+                # if max_entropy > 0:
+                #     max_entropy = max_entropy * 0.5
+                if entropy_spread > 0:
+                    entropy_spread += -1
+            else:
+                print_solution = True
+                entropy_spread += 1
+                num_found = 0
+                finished_availability = create_finished_availability(availability)
+                recursive_solver(availability, 0, finished_availability, num_booked)
+
+                # slowly increase the entropy spread
+                entropy_spread += 10
+            print(f'new entropy spread: {entropy_spread}')
+            print()
 
 
 
@@ -297,7 +504,9 @@ if __name__ == "__main__":
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
 
-    print(f'Num solutions found: {main_run(num_per_day, availability)}')
+    availability, dates, names = ep.open_notebook("Excel_Files/Test.xlsx")
+
+    print(f'Num solutions found: {main_run(num_per_day, availability, end=False, max_difference=max_diff)}')
 
 
 

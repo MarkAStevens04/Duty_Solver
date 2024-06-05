@@ -38,6 +38,22 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual(39, basic_run(availability, 10))
 
+class TestEntropy(unittest.TestCase):
+    # Tests the entropy function
+    def test_simple(self):
+        availability = [[1, 1, 1, 1],
+                        [1, 1, 1, 1],
+                        [1, 1, 1, 1],
+                        [1, 1, 1, 1]]
+        main.print_solution = True
+        main.optimize_entropy = True
+        main.max_entropy = 20
+        # actual is 6
+        self.assertEqual(6, basic_run(availability, 0.5))
+        main.optimize_entropy = False
+
+
+
 
 class TestDuration(unittest.TestCase):
     # These tests check if the algo can run in the correct time!
@@ -55,9 +71,11 @@ class TestDuration(unittest.TestCase):
                         [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
                         [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
                         [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]
-
+        prev = main.print_solution
         main.print_solution = False
         self.assertEqual(90000, basic_run(availability, 10))
+        main.print_solution = prev
+
 
     def test_kinda_hard_soln(self):
         availability =[[0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
@@ -80,7 +98,6 @@ class TestDuration(unittest.TestCase):
                        [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
         self.assertEqual(1, basic_run(availability, 0.5))
-        print('passed!!!!')
 
 
 
@@ -105,6 +122,7 @@ class TestRandom(unittest.TestCase):
             for row in availability:
                 print(row)
 
+        main.optimize_entropy = False
         run_result = main.main_run(num_per_day, availability, end=True)
 
         self.assertIsNotNone(run_result)

@@ -5,9 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Excel_Files/Test.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/Excel_Files/Test.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_excel_reading.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_excel_reading.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_excel_reading.py" beforeDir="false" afterPath="$PROJECT_DIR$/excel_processing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +34,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Python.Excel Tests.executor": "Run",
+    "Python.Run Main.executor": "Run",
     "Python.Run Tests.executor": "Run",
     "Python.main.executor": "Run",
     "Python.test_excel_reading.executor": "Run",
@@ -51,7 +51,7 @@
       <recent name="$PROJECT_DIR$/Excel_Files" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.Excel Tests">
+  <component name="RunManager" selected="Python.Run Main">
     <configuration name="Excel Tests" type="PythonConfigurationType" factoryName="Python">
       <module name="MS_Teams_Reminder" />
       <option name="ENV_FILES" value="" />
@@ -66,7 +66,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_excel_reading.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/excel_processing.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />

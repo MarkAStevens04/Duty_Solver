@@ -1,7 +1,8 @@
+import excel_processing as ep
+
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
 #                        [a third persons schedule entire time]]
-
 
 
 
@@ -17,15 +18,17 @@
 
 
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
-max_diff = 10
+max_diff = 200
 num_solutions_found = [0]
 num_per_day = 2
 
-print_solution = False
+print_solution = True
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!
-
+    print(index)
+    if index >= 36:
+        found_solution(finished_availability)
     if index >= len(availability[0]):
         # make sure every person is within range!
         for person_i in range(len(num_booked)):
@@ -278,6 +281,7 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     end_quick = end
     max_diff = max_difference
 
+    print(f'--- sorted ---')
     # recursive call
     recursive_solver(availability, 0, finished_availability, num_booked)
 
@@ -297,7 +301,9 @@ if __name__ == "__main__":
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
 
-    print(f'Num solutions found: {main_run(num_per_day, availability)}')
+    availability, dates, names = ep.open_notebook("Excel_Files/Test.xlsx")
+
+    print(f'Num solutions found: {main_run(num_per_day, availability, end=True)}')
 
 
 

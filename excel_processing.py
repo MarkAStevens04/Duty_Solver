@@ -17,7 +17,7 @@ def process_entry(entry):
     return val
 
 
-def process_notebook(path):
+def open_notebook(path):
     # Takes a path to a .xlsx file.
     # Returns tuple of availability, dates, and names.
 
@@ -66,6 +66,12 @@ def process_notebook(path):
     #         pass
     #     # print(f'-----')
 
+    return availability, dates, names
+
+
+if __name__ == "__main__":
+    availability, dates, names = open_notebook("Excel_Files/Test.xlsx")
+
     print(f'-----------------------')
     print(dates)
     print(names)
@@ -73,8 +79,4 @@ def process_notebook(path):
     for row in availability:
         print(row)
 
-    return availability, dates, names
-
-
-if __name__ == "__main__":
-    process_notebook("Excel_Files/Test.xlsx")
+    print(len(availability[0]))

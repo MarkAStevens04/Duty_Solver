@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -31,19 +28,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.UnitTests.executor": "Run",
-    "Python.Excel Tests.executor": "Run",
-    "Python.Run Main.executor": "Run",
-    "Python.Run Tests.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.test_excel_reading.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "excel__integration",
-    "last_opened_file_path": "/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.UnitTests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Excel Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_excel_reading.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;excel__integration&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/Excel Files" />

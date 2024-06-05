@@ -18,15 +18,38 @@ import excel_processing as ep
 
 
 # names = ['p1', 'p2', 'p3', 'p4', 'p5']
-max_diff = 200
+max_diff = 10
 num_solutions_found = [0]
 num_per_day = 2
 
 print_solution = True
 
+def check_valid(av, p_index, t_left):
+    # we assume the current finished_availability is valid,
+    # and we try to find if it's not!
+    #
+    # p_index is index of person
+    # r_index is index of current row
+
+    valid = True
+    if num_booked[p_index] > avg + max_diff:
+        valid = False
+
+    # if in the best case, we still cannot sum to get this current person
+    # to a high enough score, we know its not valid.
+    # if r_index is 35, will only check 36th column
+    total_left = t_left
+    if num_booked[p_index] < avg - max_diff - total_left:
+        # print(f'** ending early')
+        valid = False
+
+    return valid
+
 def recursive_solver(availability, index, finished_availability, num_booked):
     # must be within +- avg for every name when the algo finishes!
-    print(index)
+    # print(index)
+    global n_iter
+    n_iter += 1
     if index >= 36:
         found_solution(finished_availability)
     if index >= len(availability[0]):
@@ -39,6 +62,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
         # Every person is within range and we've recursed through every day!
         return found_solution(finished_availability)
 
+    t_left = sum_points(availability, index)
 
     for p1_i in range(len(availability)):
         for p2_i in range(p1_i + 1, len(availability)):
@@ -47,7 +71,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
             # quickly terminates bad runs!
             # bad run if we know this current iteration is already off.
-            if num_booked[p1_i] > avg + max_diff or num_booked[p2_i] > avg + max_diff:
+            if not check_valid(availability, p1_i, t_left) or not check_valid(availability, p2_i, t_left):
                 return False
 
 
@@ -67,7 +91,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
                 # recursive call...
                 # only do the recursive call if our guess doesn't put us in a bad state.
-                if num_booked[p1_i] <= avg + max_diff and num_booked[p2_i] <= avg + max_diff:
+                if check_valid(availability, p1_i, t_left) and check_valid(availability, p2_i, t_left):
                     found = recursive_solver(availability, index+1, finished_availability, num_booked)
 
                     if found:
@@ -84,7 +108,11 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
+    # print(n_iter)
+    # print(avg)
+    # found_solution(finished_availability)
     return False
+
 
 
 def found_solution(finished_availability):
@@ -236,20 +264,22 @@ def de_order_days(finished_availability, day_mapping):
     return final_availability
 
 
-
-
-
-def calc_avg(availability):
-    # Calculates the final average number of points per person!
-    # first, calculate the total number of points a day
+def sum_points(availability, start_index):
     total_points = 0
-    for i in range(len(availability[0])):
+    for i in range(start_index, len(availability[0])):
         # i is the index for each day
         # x is the index for each person
         x = 0
         while availability[x][i] == 0:
             x += 1
         total_points += availability[x][i]
+    return total_points
+
+
+def calc_avg(availability):
+    # Calculates the final average number of points per person!
+    # first, calculate the total number of points a day
+    total_points = sum_points(availability, 0)
 
     # avg # of points per person is the total number of points, divided by the number of ppl.
     # multipy total_points by num_per_day b/c points required increases based on number of
@@ -271,6 +301,7 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     global num_found
     global end_quick
     global max_diff
+    global n_iter
 
     availability, person_mapping = order_ppl(availability)
     availability, day_mapping = order_days(availability)
@@ -280,6 +311,8 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     num_found = 0
     end_quick = end
     max_diff = max_difference
+    n_iter = 0
+
 
     print(f'--- sorted ---')
     # recursive call

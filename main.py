@@ -16,8 +16,8 @@ import excel_processing as ep
 
 # --- setup ---
 num_per_day = 2
-print_solution = True
-optimize_entropy = True
+print_solution = False
+optimize_entropy = False
 
 # --- hyper-parameters ---
 # max_diff: maximum difference in number of points between som1 and the average
@@ -25,8 +25,8 @@ optimize_entropy = True
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_diff = 1.5
 max_entropy = 0
-entropy_spread = 780
-
+# entropy_spread = 760
+entropy_spread = 10000
 
 def check_valid(fin_av, p_index, t_left):
     # we assume the current finished_availability is valid,

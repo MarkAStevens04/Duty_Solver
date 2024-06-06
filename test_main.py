@@ -11,9 +11,10 @@ def basic_run(availability, max_diff):
 
 class TestBasic(unittest.TestCase):
     def test_very_simple(self):
-        availability = [[1, 1, 1],
-                        [1, 1, 1],
-                        [1, 1, 1]]
+        availability = [[1.5, 1, 1],
+                        [1.5, 1, 1],
+                        [1.5, 1, 1]]
+        self.assertEqual(6, basic_run(availability, 1))
 
     def test_simple_one(self):
         availability = [[1, 1, 1, 1, 0],

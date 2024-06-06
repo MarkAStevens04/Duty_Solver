@@ -451,7 +451,7 @@ if __name__ == "__main__":
 
     availability, dates, names = ep.open_notebook("Excel_Files/Given_Workbooks/Test.xlsx")
 
-    print(f'Num solutions found: {main_run(num_per_day, availability, end=False, max_difference=max_diff)}')
+    print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
 
 
 

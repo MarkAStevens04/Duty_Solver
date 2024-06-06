@@ -5,9 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Excel_Files/Given_Workbooks/Original.xlsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Excel_Files/Given_Workbooks/Test.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Excel_Files/Test.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/Excel_Files/Example_Workbooks/Mitchell_given_1.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/excel_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/excel_processing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,15 +44,18 @@
     "Python.main.executor": "Run",
     "Python.test_excel_reading.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel Files"
+    "git-widget-placeholder": "excel__export",
+    "last_opened_file_path": "/Users/mark/Documents/GitHub/MS_Teams_Reminder/Excel_Files/Given_Workbooks"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Excel_Files/Given_Workbooks" />
+      <recent name="$PROJECT_DIR$/Excel_Files/Example_Workbooks" />
       <recent name="$PROJECT_DIR$/Excel Files" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Excel_Files/Given_Workbooks" />
       <recent name="$PROJECT_DIR$/Excel_Files" />
     </key>
   </component>

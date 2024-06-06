@@ -16,8 +16,9 @@ import excel_processing as ep
 
 # --- setup ---
 num_per_day = 2
-print_solution = False
-optimize_entropy = False
+print_solution = True
+optimize_entropy = True
+export_solution = True
 
 # --- hyper-parameters ---
 # max_diff: maximum difference in number of points between som1 and the average
@@ -25,8 +26,8 @@ optimize_entropy = False
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_diff = 1.5
 max_entropy = 0
-# entropy_spread = 760
-entropy_spread = 10000
+entropy_spread = 780
+# entropy_spread = 10000
 
 def check_valid(fin_av, p_index, t_left):
     # we assume the current finished_availability is valid,
@@ -225,13 +226,20 @@ def found_solution(finished_availability):
         for r in range(len(final_availability)):
             print(f"{final_availability[r]}: {num_booked[r]}")
 
-        print(f"---")
+    global export_solution
+    if export_solution:
+        print("exporting...")
+        ep.save_workbook(final_availability)
+
+    print(f"---")
 
 
     global got_solution
     global num_found
     got_solution = True
     num_found += 1
+
+
 
 
     # return False means keep searching
@@ -441,7 +449,7 @@ if __name__ == "__main__":
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
 
-    availability, dates, names = ep.open_notebook("Excel_Files/Test.xlsx")
+    availability, dates, names = ep.open_notebook("Excel_Files/Given_Workbooks/Test.xlsx")
 
     print(f'Num solutions found: {main_run(num_per_day, availability, end=False, max_difference=max_diff)}')
 

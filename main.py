@@ -1,4 +1,17 @@
 import excel_processing as ep
+import sys
+import os
+
+path = 'C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder'
+app_path = path + '/main.py'
+
+
+
+if path not in sys.path:
+    sys.path.append(path)
+    sys.path.append(app_path)
+
+
 
 # format availability [[one persons schedule entire time],
 #                       [another persons schedule entire time],
@@ -26,7 +39,7 @@ export_solution = True
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_diff = 1.5
 max_entropy = 0
-entropy_spread = 780
+entropy_spread = 750
 # entropy_spread = 10000
 
 def check_valid(fin_av, p_index, t_left):
@@ -448,8 +461,9 @@ if __name__ == "__main__":
     availability = [[1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
-
-    availability, dates, names = ep.open_notebook("Excel_Files/Given_Workbooks/Test.xlsx")
+    default_path = "Excel_Files/Given_Workbooks/" + sys.argv[1]
+    print(f'default path: {default_path}')
+    availability, dates, names = ep.open_notebook(default_path)
 
     print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
 

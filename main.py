@@ -39,7 +39,7 @@ export_solution = True
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_diff = 1.5
 max_entropy = 0
-entropy_spread = 750
+entropy_spread = 780
 # entropy_spread = 10000
 
 def check_valid(fin_av, p_index, t_left):

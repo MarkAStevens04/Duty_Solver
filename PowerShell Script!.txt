@@ -1,0 +1,5 @@
+$env:path="$env:Path;C:\Python311"
+$pythonScriptPath = "C:\Users\doyle\Documents\GitHub\MS_Teams_Reminder\main.py"
+$arg = "Test.xlsx"
+cd C:\Users\doyle\Documents\GitHub\MS_Teams_Reminder
+python $pythonScriptPath $arg

@@ -1,5 +1,7 @@
 import openpyxl
 
+SAVE_LOCATION = 'Excel_Files/Solved_Workbooks/'
+
 path_original = ''
 path_final = ''
 origin_row = 0
@@ -173,7 +175,7 @@ def save_workbook(availability):
     global path_original
     global path_final
     global skipped_days
-    path_final = 'Excel_Files/Solved_Workbooks/'
+    path_final = SAVE_LOCATION
     original_name = path_original.split('/')[-1]
     path_final += original_name[:-5] + "_SOLVED" + original_name[-5:]
 

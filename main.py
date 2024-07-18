@@ -5,6 +5,9 @@ import os
 path = 'C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder'
 app_path = path + '/main.py'
 
+WORKBOOK_NAME = "Test.xlsx"
+OPEN_LOCATION = "Excel_Files/Given_Workbooks/"
+
 
 
 if path not in sys.path:
@@ -461,7 +464,7 @@ if __name__ == "__main__":
     availability = [[1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
-    default_path = "Excel_Files/Given_Workbooks/" + sys.argv[1]
+    default_path = OPEN_LOCATION + WORKBOOK_NAME
     print(f'default path: {default_path}')
     availability, dates, names = ep.open_notebook(default_path)
 

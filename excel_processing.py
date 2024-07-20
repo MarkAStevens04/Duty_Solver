@@ -1,6 +1,6 @@
 import openpyxl
 
-SAVE_LOCATION = 'Excel_Files/Solved_Workbooks/'
+SAVE_LOCATION = 'C:/Users/doyle/OneDrive - University of Toronto/RSS/Automations/Duty Solver/Solved/'
 
 path_original = ''
 path_final = ''
@@ -11,6 +11,11 @@ end_row = 0
 end_column = 0
 
 skipped_days = []
+
+first_pass = False
+error_messages = []
+
+
 def get_dimensions(ws):
     # gets the dimensions of the worksheet!
     #
@@ -27,13 +32,19 @@ def get_dimensions(ws):
             if not found_points:
                 entry = ws[row][col].value
                 if entry:
-                    entry = entry.strip().lower()
-                    if entry == "points":
-                        found_points = True
-                        origin_row = row + 1
-                        origin_column = col + 1
+                    try:
+                        entry = entry.strip().lower()
+                        if entry == "points":
+                            found_points = True
+                            origin_row = row + 1
+                            origin_column = col + 1
+                    except:
+                        pass
     if not found_points:
         print(f'Unable to find cell containing entry "points" ')
+        error_messages.append(f'')
+        error_messages.append(f'* ERROR: Unable to find cell containing word "points"')
+        return False
 
     # print(f'think start is {origin_row} {origin_column}')
 
@@ -54,6 +65,11 @@ def get_dimensions(ws):
     if not found_instructions:
         print(f'Unable to locate cell containing word "Instructions"')
 
+        error_messages.append(f'')
+        error_messages.append(f'* ERROR: Unable to find cell containing word "Instructions"')
+
+        return False
+
     # Now we find the cell where the date is empty!
     found_end_date = False
     for col in range(0, ws.max_column):
@@ -65,6 +81,11 @@ def get_dimensions(ws):
 
     if not found_end_date:
         print(f'Unable to locate last column')
+        error_messages.append(f'')
+        error_messages.append(f'* ERROR: Unable to locate the final column!')
+
+
+        return False
 
 
 def get_origin(ws):
@@ -72,7 +93,9 @@ def get_origin(ws):
     # 3, 2 would mean row 3 column 2, or cell C3
     # (column indexes by 0, row doesn't)
     if origin_row == 0 and origin_column == 0:
-        get_dimensions(ws)
+        if get_dimensions(ws) == False:
+            return False
+
     return origin_row, origin_column
 
 def get_end(ws):
@@ -102,14 +125,27 @@ def process_entry(entry):
             print(f'entry:{entry}.')
             print(f'entry array:{entry_array}')
             print(f'ERROR ERROR ERROR ERROR ERROR')
+
+            error_messages.append(f'* ERROR: Invalid Entry!')
+            error_messages.append(f'entry:{entry}.')
+
     return val
 
 
 def open_notebook(path):
     # Takes a path to a .xlsx file.
     # Returns tuple of availability, dates, and names.
+    reset_variables()
     global path_original
+    global first_pass
     path_original = path
+    if not first_pass:
+        global run_data
+        run_data_directory = SAVE_LOCATION + "run_data.txt"
+        run_data = open(run_data_directory, "a+")
+
+        first_pass = True
+
 
     # Define variable to load the dataframe
     dataframe = openpyxl.load_workbook(path)
@@ -119,7 +155,6 @@ def open_notebook(path):
 
 
     # Start by getting all the dates
-    dates = []
     availability = []
     availability1 = []
     names = []
@@ -141,6 +176,8 @@ def open_notebook(path):
                     availability.append([])
                     availability1.append([])
 
+    if get_origin(dataframe1) == False:
+        return False, False
     r, c = get_origin(dataframe1)
     r_f, c_f = get_end(dataframe1)
 
@@ -153,17 +190,18 @@ def open_notebook(path):
             if val != 0:
                 empty_row = False
         if empty_row:
-            print(f'found empty row')
+            print(f'found empty column')
+            error_messages.append(f'Warning: Found empty column. Double check solution is valid.')
+
             skipped_days.append(col)
             for row in range(r, r_f + 1):
                 availability1[row - r].pop()
 
-
-
+    print(f'skipping: {skipped_days}')
     # Saves the dataframe so we can re-open it later!
     dataframe.save(path)
 
-    return availability1, dates, names
+    return availability1, names
 
 
 def save_workbook(availability):
@@ -184,18 +222,17 @@ def save_workbook(availability):
     wb.save(path_original)
 
     r, c = get_origin(sheet)
+
+    # s helps us track the days we skip!
+    s = 0
     for col in range(c, min(len(availability[0]) + c, sheet.max_column)):
-        # hopefully this skips days? Unsure
-        while col in skipped_days:
-            col += 1
+        # This helps us skip days
+        if col + s in skipped_days:
+            s += 1
 
         for row in range(r, min(len(availability) + r, sheet.max_row)):
-
-
-            # print(f'row: {row}, column {col}')
-            # print(f'value: {availability[row-r][col-c]}')
             if availability[row-r][col-c] == 0:
-                sheet[row][col].value = None
+                sheet[row][col+s].value = None
 
 
     original_title = sheet.title.split()
@@ -216,13 +253,32 @@ def save_workbook(availability):
 
 
 
+def reset_variables():
+    # resets all global variables
+    global path_original
+    global path_final
+    global origin_row
+    global origin_column
+    global end_row
+    global end_column
+    global skipped_days
+
+    path_original = ''
+    path_final = ''
+    origin_row = 0
+    origin_column = 0
+
+    end_row = 0
+    end_column = 0
+
+    skipped_days = []
 
 
 
 
 
 if __name__ == "__main__":
-    availability, dates, names = open_notebook("Excel_Files/Given_Workbooks/Test.xlsx")
+    availability, dates, names = open_notebook("Excel_Files/Example_Workbooks/Test.xlsx")
 
     print(f'-----------------------')
     print(dates)

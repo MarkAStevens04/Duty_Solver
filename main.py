@@ -1,12 +1,16 @@
 import excel_processing as ep
 import sys
 import os
+from datetime import datetime
+import time
 
 path = 'C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder'
 app_path = path + '/main.py'
 
-WORKBOOK_NAME = "Test.xlsx"
-OPEN_LOCATION = "Excel_Files/Given_Workbooks/"
+
+OPEN_LOCATION = "C:/Users/doyle/OneDrive - University of Toronto/RSS/Automations/Duty Solver/Unsolved/"
+SAVE_LOCATION = "C:/Users/doyle/OneDrive - University of Toronto/RSS/Automations/Duty Solver/Solved/"
+WORKBOOK_NAME = "Central.xlsx"
 
 
 
@@ -29,6 +33,15 @@ if path not in sys.path:
 # the higher or lower part, but this is a good idea! Balance the number of people
 # with the value of each people. A day with 3 people who are very flexible should be
 # considered after a day with 5 people who are very inflexible.
+#
+# - Add errors.txt
+# - Increase max diff if timeout occurs
+#
+#
+# --- Optimization ---
+# Have a separate method check if someone is available at a given entry when doing tests.
+# That way, you can do check if the person is actually available. Check if they're already
+# booked on the next day or previous day, or if they're at their max # points, etc.
 
 # --- setup ---
 num_per_day = 2
@@ -42,8 +55,11 @@ export_solution = True
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_diff = 1.5
 max_entropy = 0
-entropy_spread = 780
+entropy_spread = 1000
 # entropy_spread = 10000
+
+# error messages list imported from excel_processing
+error_messages = ep.error_messages
 
 def check_valid(fin_av, p_index, t_left):
     # we assume the current finished_availability is valid,
@@ -150,6 +166,25 @@ def calc_entropy(availability):
     return total_cost
 
 
+def check_people_on_day(availability, num_booked):
+    # check that there are still people who can take a shift on each day, even when some of
+    # the available people have already reached their max number of points.
+    #
+    # -=- OPTIMIZATION -=-
+    # Just return False right if we find a contradiction, don't keep going.
+    all_valid_days = True
+
+    for s in range(len(availability[0])):
+        num_available = 0
+        for d in range(len(availability)):
+            if availability[d][s] != 0 and num_booked[d] < avg + max_diff:
+                num_available += 1
+        if num_available < 2:
+            all_valid_days = False
+
+    return all_valid_days
+
+
 def recursive_solver(availability, index, finished_availability, num_booked):
     # The main recursive call for our solver!
     #
@@ -168,6 +203,11 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
     t_left = sum_points(availability, index)
 
+    if not check_people_on_day(availability, num_booked):
+        print(f'terminating because of me!')
+        return False
+
+
     for p1_i in range(len(availability)):
         for p2_i in range(p1_i + 1, len(availability)):
             # iterates through every possible combination of ppl.
@@ -177,6 +217,8 @@ def recursive_solver(availability, index, finished_availability, num_booked):
             # bad run if we know this current iteration is already off.
             if not check_valid(finished_availability, p1_i, t_left) or not check_valid(finished_availability, p2_i, t_left):
                 return False
+
+
 
 
             p1_availability = availability[p1_i][index]
@@ -335,10 +377,18 @@ def calc_difficulty(availability, index):
     # Calculates the difficulty of a given day!
     # small difficulty = very difficult
     difficulty = 0
+    diff2 = 0
     for p in range(len(availability)):
         if availability[p][index] != 0:
             difficulty += 1
-    return difficulty
+            # days are more difficult if the only people who are available are people who don't have a lot of availability
+            # diff2 tracks how many easy people are available that day
+            diff2 += p
+
+
+
+
+    return difficulty, diff2
 
 def order_days(availability):
     # orders days based on their "difficulty".
@@ -358,12 +408,12 @@ def order_days(availability):
     # d is day index
     for d in range(len(availability[0])):
         # small difficulty = very difficult
-        difficulty = calc_difficulty(availability, d)
-        diff_tuples.append((difficulty, d))
+        difficulty, diff2 = calc_difficulty(availability, d)
+        diff_tuples.append((difficulty, diff2, d))
 
     diff_tuples.sort()
     for t in range(len(diff_tuples)):
-        orig_mapping[t] = diff_tuples[t][1]
+        orig_mapping[t] = diff_tuples[t][2]
 
     # reconstruct the availability
     new_availability = []
@@ -414,9 +464,56 @@ def calc_avg(availability):
     avg = (num_per_day * total_points) / len(availability)
     return avg
 
+# -------------------
+# These are some preliminary checks on the data to see if the schedule can even be solved.
+# def do_checks(availability):
+#     # takes an already sorted availability
+#     days_helping = dict()
+#     num_helping = 0
+#     # days_helping has format {duty_index : [day helping 1, day helping 2,...]}
+#
+#     # start with the first day
+#     # go on to the day that adds the least people but the most points (# points / # new people)
+#
+#     for low_index in range(availability[0]):
+#         for high_index in range(low_index, availability[0]):
+#             #
+#             points_required = 0
+#             curr_index = low_index
+#             utility = get_days_utility(days_helping, availability, curr_index)
+#             if utility > 1:
+#
+#
+#
+# def get_days_utility(days_helping, availability, curr_index):
+#     points_giving = 0
+#     new_people = 0
+#     for d in availability[curr_index]:
+#         if availability[curr_index][d] != 0:
+#             points_giving = availability[curr_index][d]
+#
+#             if d not in days_helping:
+#                 new_people += 1
+
+    #         days_helping[d].append(curr_index)
+    #
+    # if new_people == 0:
+    #     return 100000000000000
+    # return points_giving / new_people
+
+def check_no_consecutive(availability):
+    # checks to see that there exists a valid combination of days for every Don
+    for Don in availability:
+        max_points = 0
+        for day in availability:
+            pass
+
+# ------------------
 
 
-def main_run(num_per_day, availability, end=False, max_difference=1):
+
+
+def main_run(num_per_day, availability, end=False, max_difference=1.0):
     # Main running harness!
 
     finished_availability = create_finished_availability(availability)
@@ -442,14 +539,21 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
     end_quick = end
     max_diff = max_difference
 
-
     print(f'--- sorted ---')
+    for row in availability:
+        print(row)
     # recursive call
 
     recursive_solver(availability, 0, finished_availability, num_booked)
 
     if not got_solution:
         print("----- no valid combo found! -----")
+        error_messages.append(f'* ERROR: no valid combinations found!')
+
+        error_messages.append(f'          - Ensure at least 2 people are available every day')
+        error_messages.append(f'          - Ensure no one is required to work multiple consecutive days')
+        error_messages.append(f'          - Ask RSS to increase their availability on days with low availability.')
+        error_messages.append(f'          - OR ask to increase the maximum point difference')
         return False
     else:
         print("-*-*-*- solutions found! -*-*-*-")
@@ -458,6 +562,75 @@ def main_run(num_per_day, availability, end=False, max_difference=1):
 
 
 
+def loop_solve(num_per_day, availability, end=True, max_difference=max_diff):
+    # Iterates through the main loop until the smallest max_difference is found!
+
+
+    created_first = False
+
+    for filename in os.listdir(OPEN_LOCATION):
+
+        # creates the run_data.txt file on the first pass only! This way, doesn't create a run_data.txt
+        # when not necessary.
+        if not created_first:
+            print('opening first file...')
+            run_data_directory = SAVE_LOCATION + "run_data.txt"
+            run_data = open(run_data_directory, "a+")
+
+            now = datetime.now()
+            formatted_time = now.strftime('%H:%M:%S %b %d, %Y')
+            run_data.writelines(f"Solving at {formatted_time}\n")
+            error_messages.append(f'')
+            error_messages.append(f'')
+            created_first = True
+
+
+        f = os.path.join(OPEN_LOCATION, filename)
+        if os.path.isfile(f):
+            error_messages.append(f'--------------------------------------------------')
+            error_messages.append(f'solving {filename}')
+            error_messages.append(f'')
+            start = time.time()
+
+            print(f'solving...')
+            print(f)
+            availability, names = ep.open_notebook(f)
+
+            if availability == False:
+                # availability is only false if an error occurred during processing
+                error_messages.append(f'skipping {filename} due to fatal error.')
+                n = False
+            else:
+
+                n = main_run(num_per_day, availability, end=end, max_difference=max_difference)
+
+            os.remove(f)
+
+            end = time.time()
+            if (end - start) > 30:
+                error_messages.append(f'Warning: Solution took long to find. Ensure RSS increase their availability on low availability days.')
+
+            if n:
+                error_messages.append(f'')
+                error_messages.append(f'found solution!')
+            else:
+                error_messages.append(f'* ERROR: Unable to find solution for')
+                error_messages.append(f'{filename}')
+
+
+            end = time.time()
+
+            error_messages.append(f'time taken: {(end - start):06.2f}')
+            error_messages.append(f'')
+            print(f'num solutions found: {n}')
+            print()
+        while error_messages:
+            run_data.writelines(f'{error_messages.pop(0)}\n')
+
+
+def reset_variables():
+    # resets the global variables after each iteration
+    pass
 
 
 if __name__ == "__main__":
@@ -465,10 +638,9 @@ if __name__ == "__main__":
                     [1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0]]
     default_path = OPEN_LOCATION + WORKBOOK_NAME
-    print(f'default path: {default_path}')
-    availability, dates, names = ep.open_notebook(default_path)
 
-    print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
+    loop_solve(num_per_day, availability, end=True, max_difference=max_diff)
+    # print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
 
 
 

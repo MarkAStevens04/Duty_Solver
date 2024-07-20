@@ -3,6 +3,7 @@ import sys
 import os
 from datetime import datetime
 import time
+import copy
 
 path = 'C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder'
 app_path = path + '/main.py'
@@ -53,10 +54,17 @@ export_solution = True
 # max_diff: maximum difference in number of points between som1 and the average
 # max_entropy: higher val means greater tolerance of 2 consecutive days.
 # entropy_spread: higher val means greater tolerance of going long periods without duty
-max_diff = 1.5
+max_difference = 5
 max_entropy = 0
-entropy_spread = 1000
+entropy_spread = 1000000
+max_time = 3
 # entropy_spread = 10000
+
+time_start = 0
+best_so_far = []
+
+# solution_distances tracks the {distance: time_found}
+solution_distances = dict()
 
 # error messages list imported from excel_processing
 error_messages = ep.error_messages
@@ -177,12 +185,20 @@ def check_people_on_day(availability, num_booked):
     for s in range(len(availability[0])):
         num_available = 0
         for d in range(len(availability)):
-            if availability[d][s] != 0 and num_booked[d] < avg + max_diff:
+            if availability[d][s] != 0 and num_booked[d] <= avg + max_diff:
                 num_available += 1
         if num_available < 2:
             all_valid_days = False
 
     return all_valid_days
+
+def check_none_exceed_maxDist(num_booked):
+    # true means no one exceeds the maximum distance!
+    # False means someone is greater than the maximum distance
+    for d in num_booked:
+        if d > avg + max_diff:
+            return False
+    return True
 
 
 def recursive_solver(availability, index, finished_availability, num_booked):
@@ -192,6 +208,9 @@ def recursive_solver(availability, index, finished_availability, num_booked):
     # for the solution to be valid!
 
     # if we're past the final column...
+    if time.time() - time_start > max_time:
+        return found_solution(finished_availability, timeout=True)
+
     if index >= len(availability[0]):
         for person_i in range(len(num_booked)):
             if num_booked[person_i] < avg - max_diff or num_booked[person_i] > avg + max_diff:
@@ -219,8 +238,6 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 return False
 
 
-
-
             p1_availability = availability[p1_i][index]
             p2_availability = availability[p2_i][index]
             # check if both ppl are available on the given day.
@@ -238,11 +255,32 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 # recursive call...
                 # only do the recursive call if our guess doesn't put us in a bad state.
                 if check_valid(finished_availability, p1_i, t_left) and check_valid(finished_availability, p2_i, t_left):
-                    found = recursive_solver(availability, index+1, finished_availability, num_booked)
-
+                    found = recursive_solver(availability, index + 1, finished_availability, num_booked)
                     if found:
                         # recursive call found a solution, so we did too!
                         return True
+
+                    # if check_people_on_day(availability, num_booked):
+                    #     found = recursive_solver(availability, index+1, finished_availability, num_booked)
+                    #
+                    #     if found:
+                    #         # recursive call found a solution, so we did too!
+                    #         return True
+                    # else:
+                    #     print(f'didnt enter because already contradiction')
+
+                # max_dist = find_max_dist(num_booked)
+
+                # somewhere earlier caused us to exceed the max distance!
+                # if max_dist > max_diff:
+                #     print(f'max_diff: {max_diff}, max_dist: {max_dist}')
+                #     print(f'slay')
+                #     return False
+
+                # found_prev_higher = False
+                # if not check_none_exceed_maxDist(num_booked):
+                #     found_prev_higher = True
+
                 # only get here if no solution was found
                 # or if we started off by finding an error!
 
@@ -252,6 +290,16 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
                 num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
 
+                if not check_none_exceed_maxDist(num_booked):
+                    return False
+
+                # if found_prev_higher:
+                #     return False
+
+                # if not check_valid(finished_availability, p1_i, t_left) or not check_valid(finished_availability, p2_i, t_left):
+                #     print('breaking!')
+                #     return False
+
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
     # print(avg)
@@ -260,7 +308,29 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
 
 
-def found_solution(finished_availability):
+def found_solution(finished_availability, timeout=False):
+    global best_so_far
+    global time_start
+    global max_time
+    global got_solution
+
+
+    if timeout:
+        if got_solution:
+            final_availability = de_order_ppl(best_so_far, person_mapping)
+            final_availability = de_order_days(final_availability, day_mapping)
+            est_num_booked = re_calc_numBooked(final_availability)
+            print(f'timing out!')
+            for r in range(len(final_availability)):
+                print(f"{final_availability[r]}: {est_num_booked[r]}")
+            ep.save_workbook(final_availability)
+            print(f"---")
+            return True
+        else:
+            return True
+
+
+
     final_availability = de_order_ppl(finished_availability, person_mapping)
     final_availability = de_order_days(final_availability, day_mapping)
 
@@ -275,39 +345,52 @@ def found_solution(finished_availability):
         if e > max_entropy or e_s > entropy_spread:
             # print(f'skipped entropy')
             return False
-        else:
-            if print_solution:
-                print(f'entropy of soln: {e}')
-
-    # Handles what should happen when the final solution is found!
-    if print_solution:
-        for r in range(len(final_availability)):
-            print(f"{final_availability[r]}: {num_booked[r]}")
-
-    global export_solution
-    if export_solution:
-        print("exporting...")
-        ep.save_workbook(final_availability)
-
-    print(f"---")
-
-
-    global got_solution
-    global num_found
-    got_solution = True
-    num_found += 1
 
 
 
+    if time.time() - time_start >= max_time:
 
-    # return False means keep searching
-    # return True means stop after finding this solution
-    global end_quick
-    if end_quick:
+        # Handles what should happen when the final solution is found!
+        if print_solution:
+            print(f'entropy of soln: {e}')
+            for r in range(len(final_availability)):
+                print(f"{final_availability[r]}: {num_booked[r]}")
+
+        global export_solution
+        if export_solution:
+            print("exporting...")
+            ep.save_workbook(final_availability)
+
+        print(f"---")
+        global num_found
+
+        num_found += 1
         return True
     else:
+
+        global max_diff
+        max_dist = find_max_dist(num_booked)
+        got_solution = True
+        if max_dist != max_diff:
+            print(f'found better solution! New: {max_dist}, Prev: {max_diff}')
+
+            # solution_distances tracks {distance: time_found}
+            solution_distances[max_dist] = time.time() - time_start
+            best_so_far = copy.deepcopy(finished_availability)
+            # subtract small amount from max_dist because we want to find a solution with a better spread, not an equal one
+            max_diff = max_dist - 0.01
+
+        # continues the search until the time limit is reached!
         return False
 
+
+def find_max_dist(num_booked):
+    # Finds the maximum distance from the average!
+    max_dist = 0
+    for don in num_booked:
+        if abs(don - avg) > max_dist:
+            max_dist = abs(don-avg)
+    return max_dist
 
 def create_finished_availability(availability):
     # creates the final_availability base data structure
@@ -322,6 +405,15 @@ def create_finished_availability(availability):
         final.append(row)
     return final
 
+def re_calc_numBooked(availability):
+
+    new_num_booked = dict()
+    for line in range(len(availability)):
+        new_num_booked[line] = 0
+        for day in availability[line]:
+            new_num_booked[line] = new_num_booked[line] + day
+
+    return new_num_booked
 
 def order_ppl(availability):
     # orders people based on their availability
@@ -513,7 +605,7 @@ def check_no_consecutive(availability):
 
 
 
-def main_run(num_per_day, availability, end=False, max_difference=1.0):
+def main_run(num_per_day, availability, end=False, max_difference=3):
     # Main running harness!
 
     finished_availability = create_finished_availability(availability)
@@ -529,15 +621,23 @@ def main_run(num_per_day, availability, end=False, max_difference=1.0):
     global entropy_spread
     global print_solution
     global timeout
+    global time_start
+    global best_so_far
+    global solution_distances
+
+    time_start = time.time()
 
     availability, person_mapping = order_ppl(availability)
     availability, day_mapping = order_days(availability)
     avg = calc_avg(availability)
     num_booked = [0] * len(availability)
     got_solution = False
+    solution_distances = dict()
     num_found = 0
     end_quick = end
     max_diff = max_difference
+    best_so_far = []
+
 
     print(f'--- sorted ---')
     for row in availability:
@@ -562,9 +662,9 @@ def main_run(num_per_day, availability, end=False, max_difference=1.0):
 
 
 
-def loop_solve(num_per_day, availability, end=True, max_difference=max_diff):
+def loop_solve(num_per_day, availability, end=True, max_difference=3):
     # Iterates through the main loop until the smallest max_difference is found!
-
+    global got_solution
 
     created_first = False
 
@@ -599,31 +699,32 @@ def loop_solve(num_per_day, availability, end=True, max_difference=max_diff):
             if availability == False:
                 # availability is only false if an error occurred during processing
                 error_messages.append(f'skipping {filename} due to fatal error.')
-                n = False
+                got_solution = False
             else:
 
-                n = main_run(num_per_day, availability, end=end, max_difference=max_difference)
+                main_run(num_per_day, availability, end=end, max_difference=max_difference)
 
-            os.remove(f)
 
-            end = time.time()
-            if (end - start) > 30:
-                error_messages.append(f'Warning: Solution took long to find. Ensure RSS increase their availability on low availability days.')
+            # os.remove(f)
 
-            if n:
+
+            if got_solution:
                 error_messages.append(f'')
                 error_messages.append(f'found solution!')
+
+                distances = solution_distances.keys()
+                min_time = solution_distances[min(distances)]
+
+                error_messages.append(f'time taken: {(min_time):06.2f}, worst distance from average: {max(distances) // 1}')
             else:
                 error_messages.append(f'* ERROR: Unable to find solution for')
                 error_messages.append(f'{filename}')
 
+                end = time.time()
+                error_messages.append(f'time taken: {(end - start):06.2f}')
 
-            end = time.time()
-
-            error_messages.append(f'time taken: {(end - start):06.2f}')
             error_messages.append(f'')
-            print(f'num solutions found: {n}')
-            print()
+
         while error_messages:
             run_data.writelines(f'{error_messages.pop(0)}\n')
 
@@ -639,7 +740,7 @@ if __name__ == "__main__":
                     [1, 1, 1, 0, 0, 0]]
     default_path = OPEN_LOCATION + WORKBOOK_NAME
 
-    loop_solve(num_per_day, availability, end=True, max_difference=max_diff)
+    loop_solve(num_per_day, availability, end=True, max_difference=max_difference)
     # print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
 
 

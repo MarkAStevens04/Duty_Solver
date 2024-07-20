@@ -58,7 +58,6 @@ max_difference = 5
 max_entropy = 0
 entropy_spread = 1000000
 max_time = 3
-# entropy_spread = 10000
 
 time_start = 0
 best_so_far = []
@@ -207,10 +206,11 @@ def recursive_solver(availability, index, finished_availability, num_booked):
     # number of points must be within the max_diff of the average
     # for the solution to be valid!
 
-    # if we're past the final column...
+    # first check to make sure we didn't time out
     if time.time() - time_start > max_time:
         return found_solution(finished_availability, timeout=True)
 
+    # if we're past the final column...
     if index >= len(availability[0]):
         for person_i in range(len(num_booked)):
             if num_booked[person_i] < avg - max_diff or num_booked[person_i] > avg + max_diff:
@@ -260,27 +260,6 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                         # recursive call found a solution, so we did too!
                         return True
 
-                    # if check_people_on_day(availability, num_booked):
-                    #     found = recursive_solver(availability, index+1, finished_availability, num_booked)
-                    #
-                    #     if found:
-                    #         # recursive call found a solution, so we did too!
-                    #         return True
-                    # else:
-                    #     print(f'didnt enter because already contradiction')
-
-                # max_dist = find_max_dist(num_booked)
-
-                # somewhere earlier caused us to exceed the max distance!
-                # if max_dist > max_diff:
-                #     print(f'max_diff: {max_diff}, max_dist: {max_dist}')
-                #     print(f'slay')
-                #     return False
-
-                # found_prev_higher = False
-                # if not check_none_exceed_maxDist(num_booked):
-                #     found_prev_higher = True
-
                 # only get here if no solution was found
                 # or if we started off by finding an error!
 
@@ -290,15 +269,10 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 num_booked[p1_i] = num_booked[p1_i] - availability[p1_i][index]
                 num_booked[p2_i] = num_booked[p2_i] - availability[p2_i][index]
 
+                # our max_distance may have been lowered in a child call.
+                # If so, check that our solution doesn't already exceed that max distance!
                 if not check_none_exceed_maxDist(num_booked):
                     return False
-
-                # if found_prev_higher:
-                #     return False
-
-                # if not check_valid(finished_availability, p1_i, t_left) or not check_valid(finished_availability, p2_i, t_left):
-                #     print('breaking!')
-                #     return False
 
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
@@ -321,8 +295,10 @@ def found_solution(finished_availability, timeout=False):
             final_availability = de_order_days(final_availability, day_mapping)
             est_num_booked = re_calc_numBooked(final_availability)
             print(f'timing out!')
+
             for r in range(len(final_availability)):
                 print(f"{final_availability[r]}: {est_num_booked[r]}")
+
             ep.save_workbook(final_availability)
             print(f"---")
             return True
@@ -340,48 +316,30 @@ def found_solution(finished_availability, timeout=False):
     if optimize_entropy:
         e = calc_entropy(final_availability)
         e_s = calc_spread_out(final_availability)
-        # print(f'entropy_spread: {e_s}')
-        # print(f'entropy of soln: {e}')
         if e > max_entropy or e_s > entropy_spread:
-            # print(f'skipped entropy')
+            # skipped solution because of entropy!
             return False
 
+    global num_found
 
-
-    if time.time() - time_start >= max_time:
-
-        # Handles what should happen when the final solution is found!
-        if print_solution:
-            print(f'entropy of soln: {e}')
-            for r in range(len(final_availability)):
-                print(f"{final_availability[r]}: {num_booked[r]}")
-
-        global export_solution
-        if export_solution:
-            print("exporting...")
-            ep.save_workbook(final_availability)
-
-        print(f"---")
-        global num_found
-
+    global max_diff
+    max_dist = find_max_dist(num_booked)
+    got_solution = True
+    if max_dist != max_diff:
         num_found += 1
-        return True
-    else:
+        print(f'found better solution! New: {max_dist}, Prev: {max_diff}')
 
-        global max_diff
-        max_dist = find_max_dist(num_booked)
-        got_solution = True
-        if max_dist != max_diff:
-            print(f'found better solution! New: {max_dist}, Prev: {max_diff}')
+        # solution_distances tracks {distance: time_found}
+        solution_distances[max_dist] = time.time() - time_start
+        best_so_far = copy.deepcopy(finished_availability)
+        # subtract small amount from max_dist because we want to find a solution with a better spread, not an equal one
+        max_diff = max_dist - 0.01
 
-            # solution_distances tracks {distance: time_found}
-            solution_distances[max_dist] = time.time() - time_start
-            best_so_far = copy.deepcopy(finished_availability)
-            # subtract small amount from max_dist because we want to find a solution with a better spread, not an equal one
-            max_diff = max_dist - 0.01
-
+    if time.time() - time_start < max_time:
         # continues the search until the time limit is reached!
         return False
+
+    return True
 
 
 def find_max_dist(num_booked):
@@ -438,20 +396,15 @@ def order_ppl(availability):
         tuples.append((num_f[input], input))
     tuples.sort()
     num_f.sort()
-    # print(tuples)
-    # print(dict_mapping)
 
     for found_i in range(len(tuples)):
         dict_mapping[tuples[found_i][1]] = found_i
 
-    # print(dict_mapping)
 
     sorted_array = []
     for i in range(len(tuples)):
         sorted_array.append(availability[tuples[i][1]])
 
-    # for row in sorted_array:
-    #     print(row)
     return sorted_array, dict_mapping
 
 def de_order_ppl(finished_availability, availability_dict):
@@ -741,7 +694,7 @@ if __name__ == "__main__":
     default_path = OPEN_LOCATION + WORKBOOK_NAME
 
     loop_solve(num_per_day, availability, end=True, max_difference=max_difference)
-    # print(f'Num solutions found: {main_run(num_per_day, availability, end=True, max_difference=max_diff)}')
+
 
 
 

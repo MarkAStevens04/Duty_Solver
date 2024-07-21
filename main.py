@@ -49,6 +49,7 @@ num_per_day = 2
 print_solution = True
 optimize_entropy = True
 export_solution = True
+repair = True
 
 # --- hyper-parameters ---
 # max_diff: maximum difference in number of points between som1 and the average
@@ -56,19 +57,20 @@ export_solution = True
 # entropy_spread: higher val means greater tolerance of going long periods without duty
 max_difference = 5
 max_entropy = 0
-entropy_spread = 1000000
-max_time = 3
+entropy_spread = 1000000000000
+max_time = 5
 
 time_start = 0
 best_so_far = []
 
 # solution_distances tracks the {distance: time_found}
 solution_distances = dict()
+exported_solution = False
 
 # error messages list imported from excel_processing
 error_messages = ep.error_messages
 
-def check_valid(fin_av, p_index, t_left):
+def check_valid(fin_av, p_index, t_left, check_entropy=True):
     # we assume the current finished_availability is valid,
     # and we try to find if it's not!
     #
@@ -87,16 +89,48 @@ def check_valid(fin_av, p_index, t_left):
         valid = False
 
     # if we're optimizing the entropy, do that!
-    if optimize_entropy:
+    if check_entropy:
         # start by sorting back the days to their original order
+        valid = valid and full_entropy_check(fin_av, person_mapping, day_mapping)
+
+    return valid
+
+def check_many_valid(fin_av, t_left, check_entropy=True):
+    valid = True
+    total_left = t_left * num_per_day
+    for p in range(len(fin_av)):
+        if num_booked[p] > avg + max_diff:
+            valid = False
+        if num_booked[p] < avg - max_diff - t_left:
+            # if it's impossible for us to get to the minimum, return False
+            valid = False
+        elif num_booked[p] < avg - max_diff:
+            # There's only a certain number of points left.
+            # if in the best case, we can't get everyone up to the
+            # minimum number of points, we cut off this branch!
+            total_left += num_booked[p] - (((avg - max_diff) + 1) // 1)
+    if total_left < 0:
+        valid = False
+
+
+    if check_entropy:
+        # start by sorting back the days to their original order
+        valid = valid and full_entropy_check(fin_av, person_mapping, day_mapping)
+
+    return valid
+
+
+def full_entropy_check(fin_av, person_mapping, day_mapping):
+    valid = True
+    if optimize_entropy:
         final_availability = de_order_ppl(fin_av, person_mapping)
         final_availability = de_order_days(final_availability, day_mapping)
 
         e = calc_entropy(final_availability)
         if e > max_entropy:
             valid = False
-
     return valid
+
 
 def calc_spread_out(availability):
     # calc a score based on how spread out a final set of days are!
@@ -208,7 +242,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
 
     # first check to make sure we didn't time out
     if time.time() - time_start > max_time:
-        return found_solution(finished_availability, timeout=True)
+        return found_solution(availability, finished_availability, timeout=True)
 
     # if we're past the final column...
     if index >= len(availability[0]):
@@ -218,7 +252,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 return False
         # Found a valid solution!
         # Every person is within range and we've recursed through every day!
-        return found_solution(finished_availability)
+        return found_solution(availability, finished_availability)
 
     t_left = sum_points(availability, index)
 
@@ -274,6 +308,11 @@ def recursive_solver(availability, index, finished_availability, num_booked):
                 if not check_none_exceed_maxDist(num_booked):
                     return False
 
+
+                if not check_many_valid(finished_availability, t_left, check_entropy=True):
+                    # print(f'even slighter shortcut!')
+                    return False
+
     # Went through every combination of names and still didn't find a solution.
     # Therefore, outside combination had a fault.
     # print(avg)
@@ -281,8 +320,7 @@ def recursive_solver(availability, index, finished_availability, num_booked):
     return False
 
 
-
-def found_solution(finished_availability, timeout=False):
+def found_solution(availability, finished_availability, timeout=False):
     global best_so_far
     global time_start
     global max_time
@@ -290,17 +328,17 @@ def found_solution(finished_availability, timeout=False):
 
 
     if timeout:
-        if got_solution:
+        print(f'timing out!')
+        if repair:
             final_availability = de_order_ppl(best_so_far, person_mapping)
             final_availability = de_order_days(final_availability, day_mapping)
-            est_num_booked = re_calc_numBooked(final_availability)
-            print(f'timing out!')
 
-            for r in range(len(final_availability)):
-                print(f"{final_availability[r]}: {est_num_booked[r]}")
+            copy_avail = copy.deepcopy(availability)
+            unmapped_availability = de_order_ppl(copy_avail, person_mapping)
+            unmapped_availability = de_order_days(unmapped_availability, day_mapping)
+            repair_solution(unmapped_availability, final_availability)
 
-            ep.save_workbook(final_availability)
-            print(f"---")
+            export_solution(final_availability, re_order=False)
             return True
         else:
             return True
@@ -321,13 +359,13 @@ def found_solution(finished_availability, timeout=False):
             return False
 
     global num_found
-
     global max_diff
-    max_dist = find_max_dist(num_booked)
+
+    max_dist = find_max_dist_list(num_booked)
     got_solution = True
     if max_dist != max_diff:
         num_found += 1
-        print(f'found better solution! New: {max_dist}, Prev: {max_diff}')
+        print(f'found better solution! ({(time.time() - time_start):06.2f}) New: {max_dist}, Prev: {max_diff}')
 
         # solution_distances tracks {distance: time_found}
         solution_distances[max_dist] = time.time() - time_start
@@ -342,12 +380,37 @@ def found_solution(finished_availability, timeout=False):
     return True
 
 
-def find_max_dist(num_booked):
+def export_solution(finished_availability, re_order=True):
+    # exports the final solution!
+    global exported_solution
+    global got_solution
+
+    if not exported_solution:
+        if got_solution:
+            if re_order:
+                final_availability = de_order_ppl(best_so_far, person_mapping)
+                finished_availability = de_order_days(final_availability, day_mapping)
+
+            est_num_booked = re_calc_numBooked(finished_availability)
+            for r in range(len(finished_availability)):
+                print(f"{finished_availability[r]}: {est_num_booked[r]}")
+            ep.save_workbook(finished_availability)
+            print(f"---")
+        exported_solution = True
+
+def find_max_dist_list(num_booked):
     # Finds the maximum distance from the average!
     max_dist = 0
     for don in num_booked:
         if abs(don - avg) > max_dist:
             max_dist = abs(don-avg)
+    return max_dist
+
+def find_max_dist_dict(num_booked):
+    max_dist = 0
+    for don in num_booked:
+        if abs(num_booked[don] - avg) > max_dist:
+            max_dist = abs(num_booked[don] - avg)
     return max_dist
 
 def create_finished_availability(availability):
@@ -364,7 +427,7 @@ def create_finished_availability(availability):
     return final
 
 def re_calc_numBooked(availability):
-
+    # recalculates num_booked!
     new_num_booked = dict()
     for line in range(len(availability)):
         new_num_booked[line] = 0
@@ -497,7 +560,6 @@ def sum_points(availability, start_index):
         total_points += availability[x][i]
     return total_points
 
-
 def calc_avg(availability):
     # Calculates the final average number of points per person!
     # first, calculate the total number of points a day
@@ -546,13 +608,87 @@ def calc_avg(availability):
     #     return 100000000000000
     # return points_giving / new_people
 
-def check_no_consecutive(availability):
-    # checks to see that there exists a valid combination of days for every Don
-    for Don in availability:
-        max_points = 0
-        for day in availability:
-            pass
+def repair_solution(availability, final_availability):
+    # Takes some final availability and attempts to fix it!
+    # Swaps shifts where the swappee has too few points, and swapper
+    # has too many.
+    num_booked = re_calc_numBooked(final_availability)
 
+    c = 1
+    total_swaps = 0
+    while c != 0:
+        c = comb(availability, final_availability, num_booked)
+        if c != 0:
+            print(f'made {c} changes!')
+            total_swaps += c
+    # comb(availability, final_availability, too_high, too_low, num_booked)
+    if total_swaps != 0:
+        error_messages.append(f'Debug: Made {total_swaps} shift swaps!')
+    md = find_max_dist_dict(num_booked)
+    solution_distances[md] = time.time() - time_start
+
+
+
+
+def comb(availability, final_availability, num_booked):
+    num_changes = 0
+
+    # we comb through every day!
+    for day in range(len(final_availability[0])):
+        # first, find which dons are working.
+        dons_working = []
+        for d in range(len(final_availability)):
+            if final_availability[d][day] != 0:
+                dons_working.append(d)
+        # then, we check which dons are free.
+        dons_free = []
+        for d in range(len(availability)):
+            if availability[d][day] != 0:
+                dons_free.append(d)
+
+        # store the value of this day
+        day_value = final_availability[dons_working[0]][day]
+
+        # now, check if any of the free dons would benefit from taking the shift (or any busy dons would benefit from giving away)
+        for f in dons_free:
+            for d in dons_working:
+                # see what would happen if we gave this shift away
+                distance_start = abs(num_booked[d] - avg) + abs(num_booked[f] - avg)
+                distance_swap = abs(num_booked[d] - avg - day_value) + abs(num_booked[f] - avg + day_value)
+
+                # if switching shifts is desirable...
+                if distance_swap < distance_start:
+
+                    # first check that the switch would be valid.
+                    # A switch is invalid if the swapee now has consecutive shifts.
+                    can_swap = True
+                    if day > 0:
+                        if final_availability[f][day-1] != 0:
+                            can_swap = False
+                    elif day < len(final_availability[0]) - 1:
+                        if final_availability[f][day+1] != 0:
+                            can_swap = False
+
+                    # if we can swap, lets swap!
+                    if can_swap:
+                        # update num_booked to reflect our swap
+                        num_booked[d] = num_booked[d] - day_value
+                        num_booked[f] = num_booked[f] + day_value
+                        # update our availability
+                        final_availability[f][day], final_availability[d][day] = final_availability[d][day], final_availability[f][day]
+                        # change the working list to reflect our changes
+                        dons_working.append(f)
+                        dons_working.remove(d)
+                        num_changes += 1
+
+    return num_changes
+
+
+    # for don_t in too_high:
+    #     for d_i in range(len(availability[0])):
+    #         if availability[don_t[1]] != 0:
+    #             for don_swaper_t in too_low:
+    #                 if availability[don_t[1]] != 0:
 # ------------------
 
 
@@ -577,6 +713,8 @@ def main_run(num_per_day, availability, end=False, max_difference=3):
     global time_start
     global best_so_far
     global solution_distances
+    global exported_solution
+
 
     time_start = time.time()
 
@@ -585,6 +723,7 @@ def main_run(num_per_day, availability, end=False, max_difference=3):
     avg = calc_avg(availability)
     num_booked = [0] * len(availability)
     got_solution = False
+    exported_solution = False
     solution_distances = dict()
     num_found = 0
     end_quick = end
@@ -609,6 +748,8 @@ def main_run(num_per_day, availability, end=False, max_difference=3):
         error_messages.append(f'          - OR ask to increase the maximum point difference')
         return False
     else:
+
+        export_solution(finished_availability)
         print("-*-*-*- solutions found! -*-*-*-")
         return num_found
 
@@ -668,7 +809,7 @@ def loop_solve(num_per_day, availability, end=True, max_difference=3):
                 distances = solution_distances.keys()
                 min_time = solution_distances[min(distances)]
 
-                error_messages.append(f'time taken: {(min_time):06.2f}, worst distance from average: {max(distances) // 1}')
+                error_messages.append(f'time taken: {(min_time):06.2f}, worst distance from average: {max(distances)}')
             else:
                 error_messages.append(f'* ERROR: Unable to find solution for')
                 error_messages.append(f'{filename}')

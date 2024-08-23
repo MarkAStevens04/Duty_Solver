@@ -631,18 +631,22 @@ def repair_solution(availability, final_availability):
     # has too many.
     num_booked = re_calc_numBooked(final_availability)
 
+    # while making swaps is helpful...
     c = 1
     total_swaps = 0
     while c != 0:
+        # do the swaps!
         c = comb(availability, final_availability, num_booked)
+        # if any changes are made, track them.
         if c != 0:
             print(f'made {c} changes!')
             total_swaps += c
-    # comb(availability, final_availability, too_high, too_low, num_booked)
+
     if total_swaps != 0:
         error_messages.append(f'Debug: Made {total_swaps} shift swaps!')
-    md = find_max_dist_dict(num_booked)
-    solution_distances[md] = time.time() - time_start
+
+    # md = find_max_dist_dict(num_booked)
+    # solution_distances[md] = time.time() - time_start
 
 
 

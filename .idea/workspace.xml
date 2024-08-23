@@ -34,21 +34,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.UnitTests.executor": "Run",
-    "Python.Excel Tests.executor": "Run",
-    "Python.Run Main.executor": "Run",
-    "Python.Run Tests.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.test_excel_reading.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "excel__export",
-    "last_opened_file_path": "C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder/test_main_updated.py",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.UnitTests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Excel Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Run Tests.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_excel_reading.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;excel__export&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/doyle/Documents/GitHub/MS_Teams_Reminder/test_main_updated.py&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\doyle\Documents\GitHub\MS_Teams_Reminder" />
@@ -146,10 +146,10 @@
     </configuration>
     <list>
       <item itemvalue="Python.Run Main" />
-      <item itemvalue="Python tests.UnitTests" />
-      <item itemvalue="Python tests.UPDATED UnitTest" />
       <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_many_soln" />
       <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_simple" />
+      <item itemvalue="Python tests.UPDATED UnitTest" />
+      <item itemvalue="Python tests.UnitTests" />
     </list>
     <recent_temporary>
       <list>

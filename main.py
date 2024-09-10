@@ -44,10 +44,12 @@ if path not in sys.path:
 # That way, you can do check if the person is actually available. Check if they're already
 # booked on the next day or previous day, or if they're at their max # points, etc.
 
+# Why did increasing the max_difference from 5 to 500 make solving Central SO much faster??
+
 # --- setup ---
 num_per_day = 2
 print_solution = True
-optimize_entropy = True
+optimize_entropy = False
 export_solution = True
 repair = True
 
@@ -55,10 +57,10 @@ repair = True
 # max_diff: maximum difference in number of points between som1 and the average
 # max_entropy: higher val means greater tolerance of 2 consecutive days.
 # entropy_spread: higher val means greater tolerance of going long periods without duty
-max_difference = 10
+max_difference = 500000000000
 max_entropy = 10000000
 entropy_spread = 1000000000000
-max_time = 300
+max_time = 600
 
 time_start = 0
 best_so_far = []
@@ -149,6 +151,7 @@ def full_entropy_check(fin_av, person_mapping, day_mapping):
         e = calc_entropy(final_availability)
         if e > max_entropy:
             valid = False
+            # print(f'***** failing in entropy check first')
     return valid
 
 def calc_spread_out(availability):
@@ -192,11 +195,8 @@ def calc_spread_out(availability):
                     total_cost += 100000000000000
                 run = 0
 
-        # print(f'person {p}, person_cost {person_cost}')
         person_cost = (person_cost ** 2) * 1000
         person_cost += z_total_cost
-        # # print(f'person {p} new cost {person_cost}')
-        # print(f'person {p}, zero r cost {z_total_cost}')
 
         total_cost += person_cost
     return total_cost
@@ -206,8 +206,9 @@ def calc_entropy(availability):
     # add 1 every time a given person has 2 consecutive shifts.
     # for each person, end by squaring the value
     total_cost = 0
-    weekday_max_run = 5
-    weekend_max_run = 3
+
+    weekday_max_run = 100
+    weekend_max_run = 100
 
     weekend_point_value = 2
 
@@ -379,11 +380,25 @@ def found_solution(availability, finished_availability, timeout=False):
     # next do our entropy check
     # this significantly slows down our algo...
     global optimize_entropy
-    if optimize_entropy:
+    if optimize_entropy and False:
         e = calc_entropy(final_availability)
         e_s = calc_spread_out(final_availability)
+        # e_s = 0
         if e > max_entropy or e_s > entropy_spread:
             # skipped solution because of entropy!
+
+
+            # check here? Weird many calls
+            # print(f'max entropy exceeded!')
+            # print(f'e: {e}, e_s: {e_s}')
+            # for row in finished_availability:
+            #     print(row)
+            #
+            # print(f'===========')
+            # for row in final_availability:
+            #     print(row)
+
+
             return False
 
     global num_found
@@ -391,6 +406,12 @@ def found_solution(availability, finished_availability, timeout=False):
 
     max_dist = find_max_dist_list(num_booked)
     got_solution = True
+
+    # check here? Weird many calls
+    # print(f'final solution found... {max_diff}, {max_dist}')
+
+
+
     if max_dist != max_diff:
         num_found += 1
         print(f'found better solution! ({(time.time() - time_start):06.2f}) New: {max_dist}, Prev: {max_diff}')
@@ -404,6 +425,9 @@ def found_solution(availability, finished_availability, timeout=False):
     if time.time() - time_start < max_time:
         # continues the search until the time limit is reached!
         return False
+    else:
+        error_messages.append("timing out!")
+        print(f'timing out...')
 
     return True
 

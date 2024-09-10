@@ -52,6 +52,7 @@ print_solution = True
 optimize_entropy = False
 export_solution = True
 repair = True
+delete_original = False
 
 # --- hyper-parameters ---
 # max_diff: maximum difference in number of points between som1 and the average
@@ -60,7 +61,7 @@ repair = True
 max_difference = 500000000000
 max_entropy = 10000000
 entropy_spread = 1000000000000
-max_time = 600
+max_time = 5
 
 time_start = 0
 best_so_far = []
@@ -250,7 +251,6 @@ def calc_entropy(availability):
 
     return total_cost
 
-
 def check_people_on_day(availability, num_booked):
     # check that there are still people who can take a shift on each day, even when some of
     # the available people have already reached their max number of points.
@@ -276,7 +276,6 @@ def check_none_exceed_maxDist(num_booked):
         if d > avg + max_diff:
             return False
     return True
-
 
 def recursive_solver(availability, index, finished_availability, num_booked):
     # The main recursive call for our solver!
@@ -363,7 +362,6 @@ def recursive_solver(availability, index, finished_availability, num_booked):
     # found_solution(finished_availability)
     return False
 
-
 def found_solution(availability, finished_availability, timeout=False):
     global best_so_far
     global time_start
@@ -431,7 +429,6 @@ def found_solution(availability, finished_availability, timeout=False):
 
     return True
 
-
 def export_solution(availability):
     # exports the final solution!
     # takes the original availability as input to help do some swaps
@@ -457,7 +454,6 @@ def export_solution(availability):
             print(f"{final_availability[r]}: {est_num_booked[r]}")
         ep.save_workbook(final_availability)
         print(f"---")
-
 
 def find_max_dist_list(num_booked):
     # Finds the maximum distance from the average!
@@ -541,7 +537,6 @@ def de_order_ppl(finished_availability, availability_dict):
         final_availability.append(finished_availability[i])
     return final_availability
 
-
 def calc_difficulty(availability, index):
     # Calculates the difficulty of a given day!
     # small difficulty = very difficult
@@ -609,7 +604,6 @@ def de_order_days(finished_availability, day_mapping):
 
     return final_availability
 
-
 def sum_points(availability, start_index):
     total_points = 0
     for i in range(start_index, len(availability[0])):
@@ -669,6 +663,7 @@ def calc_avg(availability):
     #     return 100000000000000
     # return points_giving / new_people
 
+
 def repair_solution(availability, final_availability):
     # Takes some final availability and attempts to fix it!
     # Swaps shifts where the swappee has too few points, and swapper
@@ -689,11 +684,11 @@ def repair_solution(availability, final_availability):
     if total_swaps != 0:
         error_messages.append(f'Debug: Made {total_swaps} shift swaps!')
 
+    print(f'repair two!')
+    repair_solution_two(availability, final_availability)
+
     # md = find_max_dist_dict(num_booked)
     # solution_distances[md] = time.time() - time_start
-
-
-
 
 def comb(availability, final_availability, num_booked):
     num_changes = 0
@@ -754,6 +749,144 @@ def comb(availability, final_availability, num_booked):
     #         if availability[don_t[1]] != 0:
     #             for don_swaper_t in too_low:
     #                 if availability[don_t[1]] != 0:
+
+
+
+# ----------------------------------------------
+# better repair solution!
+
+
+class Don:
+    def __init__(self):
+        self.available_days = set()
+        self.working_days = set()
+
+        self.index = 0
+
+
+class Day:
+    def __init__(self):
+        self.available_dons = set()
+        self.working_dons = set()
+
+        self.index = 0
+        self.point_value = 0
+
+        self.intersections = 0
+
+
+def setup_classes(availability, final_availability):
+    """
+    Returns a list of day classes!
+    :param availability:
+    :param final_availability:
+    :return:
+    """
+
+    # Setup array containing all dons
+    all_dons = []
+    for don_i in range(len(availability)):
+        new_don = Don()
+        new_don.index = don_i
+        all_dons.append(new_don)
+
+    # Setup array containing all days
+    all_days = []
+    for day_i in range(len(availability[0])):
+        new_day = Day()
+        new_day.index = day_i
+        all_days.append(new_day)
+
+        i = 0
+        while new_day.point_value == 0:
+            if availability[i][day_i] != 0:
+                new_day.point_value = availability[i][day_i]
+            else:
+                i += 1
+
+    # Initialize values in all variables
+    # for each day...
+    for day_i in range(len(availability[0])):
+        curr_day = all_days[day_i]
+
+        # for each don...
+        for don_i in range(len(availability)):
+            curr_don = all_dons[don_i]
+
+            # if the don is available that day...
+            if availability[don_i][day_i] != 0:
+                curr_day.available_dons.add(curr_don)
+                curr_don.available_days.add(curr_day)
+
+            # if the don is scheduled to work that day...
+            if final_availability[don_i][day_i] != 0:
+                curr_day.working_dons.add(curr_don)
+                curr_don.working_days.add(curr_day)
+
+    # print(f'dons: {all_dons}')
+    # for don in all_dons:
+    #     print(f'num days available: {len(don.working_days)}')
+    # print(f'days: {all_days}')
+    # for day in all_days:
+    #     print(f'num dons available: {day.point_value}')
+
+    return all_days
+
+
+def find_consecutive_days(all_days):
+    """
+    Finds the working shifts where dons are working consecutively!
+    :return:
+    """
+
+    # goes through every day
+    # compares dons working this day with dons working previous day.
+    # if consecutive, records!
+    prev_dons = set()
+    for day in all_days:
+        if day.point_value != 1:
+            curr_dons = day.working_dons
+            if curr_dons.intersection(prev_dons):
+                consecutive = curr_dons.intersection(prev_dons)
+                print(f'CONSECUTIVE DAYS!')
+                for d in consecutive:
+                    print(f'day {day.index}, don {d.index}')
+                print(f'')
+            prev_dons = curr_dons
+
+
+
+
+
+
+
+def repair_solution_two(availability, final_availability):
+    """
+    Takes a non-ideal solution and makes it more ideal!
+
+    = Non-ideal conditions =
+    Consecutive days
+        - DONs cannot work consecutive weekends
+        - consecutive weekdays are also not ideal
+    day spacing
+        - better if days are spaced out throughout shift. Minimize long periods without shifts!
+        - okay to have 3 shifts in a week as long as
+            there are shifts throughout entire block
+        - not okay to have a shift every week, and zero shifts for the rest of the block
+
+
+    :param availability:
+    :param final_availability:
+    :return:
+    """
+    # first, get the list of available and working dons!
+
+    all_days = setup_classes(availability,final_availability)
+    find_consecutive_days(all_days)
+
+
+
+
 # ------------------
 
 
@@ -860,8 +993,8 @@ def loop_solve(num_per_day, availability, end=True, max_difference=3):
 
                 main_run(num_per_day, availability, end=end, max_difference=max_difference)
 
-
-            os.remove(f)
+            if delete_original:
+                os.remove(f)
 
 
             if got_solution:

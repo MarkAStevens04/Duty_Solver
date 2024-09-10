@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="34dd5ddf-b2c3-43b7-941a-ffd392bc807f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/excel_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/excel_processing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -146,10 +147,10 @@
     </configuration>
     <list>
       <item itemvalue="Python.Run Main" />
-      <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_many_soln" />
-      <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_simple" />
       <item itemvalue="Python tests.UPDATED UnitTest" />
       <item itemvalue="Python tests.UnitTests" />
+      <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_many_soln" />
+      <item itemvalue="Python tests.Python tests for test_main_updated.TestLonger.test_simple" />
     </list>
     <recent_temporary>
       <list>

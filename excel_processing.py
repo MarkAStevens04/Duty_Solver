@@ -81,11 +81,16 @@ def get_dimensions(ws):
 
     if not found_end_date:
         print(f'Unable to locate last column')
+        print(f'inferring last column as final column')
+
         error_messages.append(f'')
         error_messages.append(f'* ERROR: Unable to locate the final column!')
+        error_messages.append(f'* Inferring last column as final column')
+
+        end_column = ws.max_column - 1
 
 
-        return False
+
 
 
 def get_origin(ws):

@@ -55,8 +55,8 @@ repair = True
 # max_diff: maximum difference in number of points between som1 and the average
 # max_entropy: higher val means greater tolerance of 2 consecutive days.
 # entropy_spread: higher val means greater tolerance of going long periods without duty
-max_difference = 5
-max_entropy = 0
+max_difference = 10
+max_entropy = 10000000
 entropy_spread = 1000000000000
 max_time = 300
 
@@ -140,9 +140,6 @@ def single_row_points_left(fin_av, given_av, row, p):
         total_workable += given_av[p][day]
     return total_workable
 
-
-
-
 def full_entropy_check(fin_av, person_mapping, day_mapping):
     valid = True
     if optimize_entropy:
@@ -154,11 +151,12 @@ def full_entropy_check(fin_av, person_mapping, day_mapping):
             valid = False
     return valid
 
-
 def calc_spread_out(availability):
     # calc a score based on how spread out a final set of days are!
     # same as calc_entropy but with added functions
     total_cost = 0
+    weekday_max_run = 5
+    weekend_max_run = 2
 
     for p in range(len(availability)):
         run = 0
@@ -166,6 +164,8 @@ def calc_spread_out(availability):
 
         z_run_v = 0
         z_total_cost = 0
+        weekend = False
+
         for c in range(len(availability[0])):
             if availability[p][c] != 0:
                 run += 1
@@ -173,6 +173,12 @@ def calc_spread_out(availability):
                 # print(f'run_length: {z_run_v}')
                 z_total_cost += z_run_v ** 2
                 z_run_v = 0
+
+                if availability[p][c] == 2:
+                    weekend = True
+                else:
+                    weekend = False
+
             else:
                 z_run_v += 1
 
@@ -180,7 +186,9 @@ def calc_spread_out(availability):
                     person_cost += run
                 # if run != 0:
                 #     person_cost += run
-                if run >= 2:
+                if weekend and run >= weekend_max_run:
+                    total_cost += 100000000000000
+                elif not weekend and run >= weekday_max_run:
                     total_cost += 100000000000000
                 run = 0
 
@@ -198,19 +206,27 @@ def calc_entropy(availability):
     # add 1 every time a given person has 2 consecutive shifts.
     # for each person, end by squaring the value
     total_cost = 0
-    max_run = 2
+    weekday_max_run = 5
+    weekend_max_run = 3
+
+    weekend_point_value = 2
 
     for p in range(len(availability)):
         # run is the length of the run
         # person cost is the sum of lengths of all runs for this person
         run = 0
         person_cost = 0
+        weekend = False
 
         # for every day in this block
         for c in range(len(availability[0])):
             # if the day is not 0, our run continues
             if availability[p][c] != 0:
                 run += 1
+                if availability[p][c] == weekend_point_value:
+                    weekend = True
+                else:
+                    weekend = False
             else:
                 # the run has been broken b/c we reached a 0!
                 #
@@ -218,7 +234,11 @@ def calc_entropy(availability):
                 # length of the run to the person_cost.
                 if run > 1:
                     person_cost += run
-                if run >= max_run:
+                if weekend and run >= weekend_max_run:
+                    # uh oh! weekend overran.
+                    total_cost += 100000000000000
+                elif not weekend and run >= weekday_max_run:
+                    # uh oh! Weekday overran
                     # if our run was greater than the max run, shoot up the entropy.
                     total_cost += 100000000000000
                 # reset our run

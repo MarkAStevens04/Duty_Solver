@@ -46,13 +46,18 @@ if path not in sys.path:
 
 # Why did increasing the max_difference from 5 to 500 make solving Central SO much faster??
 
+# Construct a GRAPH with each node being a working_don, day pair. An edge between nodes means that
+# don_a is available on node_b, and don_b is available on node_a.
+# Cycles in the graph mean you can do that swap a swap on that day!
+# wait no that's not right, but I think I'm on to something...
+
 # --- setup ---
 num_per_day = 2
 print_solution = True
 optimize_entropy = False
 export_solution = True
 repair = True
-delete_original = False
+delete_original = True
 
 # --- hyper-parameters ---
 # max_diff: maximum difference in number of points between som1 and the average
@@ -61,7 +66,7 @@ delete_original = False
 max_difference = 500000000000
 max_entropy = 10000000
 entropy_spread = 1000000000000
-max_time = 5
+max_time = 300
 
 time_start = 0
 best_so_far = []
@@ -719,8 +724,8 @@ def comb(availability, final_availability, num_booked):
                 # if switching shifts is desirable...
                 if distance_swap < distance_start:
 
-                    # first check that the switch would be valid.
-                    # A switch is invalid if the swapee now has consecutive shifts.
+                    # first check that the store_switch would be valid.
+                    # A store_switch is invalid if the swapee now has consecutive shifts.
                     can_swap = True
                     if day > 0:
                         if final_availability[f][day-1] != 0:
@@ -761,6 +766,8 @@ class Don:
         self.available_days = set()
         self.working_days = set()
 
+        self.avail_point_dict = dict()
+
         self.index = 0
 
 
@@ -773,6 +780,179 @@ class Day:
         self.point_value = 0
 
         self.intersections = 0
+
+
+class Intersection:
+    def __init__(self):
+        self.day_span = set()
+        self.don_causing = None
+
+        self.all_swaps = set()
+
+    def do_swap(self, swap, final_availability):
+        """
+        = Pre-requisite =
+        store_switch has returned true on this swap!
+
+        :return:
+        """
+        orig_day = swap[0]
+        swap_day = swap[1]
+        orig_don = swap[2]
+        swap_don = swap[3]
+
+        # print(f'-----------')
+        # for row in final_availability:
+        #     print(row)
+        # print(f'*')
+        # print(f'day: {orig_day.index} with day {swap_day.index}')
+        # print(f'don: {orig_don.index} with don {swap_don.index}')
+
+        # swap don on original day takes old value
+        # update value of original don on original day
+        if final_availability[orig_don.index][orig_day.index] == 0:
+            print(f'error! trying to take orig from 0')
+            print(f'don: {orig_don.index}, day: {orig_day.index}')
+            print(f'don: {swap_don.index}, day: {swap_day.index}')
+
+        final_availability[swap_don.index][orig_day.index] = final_availability[orig_don.index][orig_day.index]
+        final_availability[orig_don.index][orig_day.index] = 0
+
+        if final_availability[swap_don.index][swap_day.index] == 0:
+            print(f'error! trying to take swap from 0')
+            print(f'don: {swap_don.index}, day: {swap_day.index}')
+            print(f'don: {orig_don.index}, day: {orig_day.index}')
+
+        final_availability[orig_don.index][swap_day.index] = final_availability[swap_don.index][swap_day.index]
+        final_availability[swap_don.index][swap_day.index] = 0
+
+        # print(f'- swap occurred don: {swap_don.index}, day: {swap_day.index} -> don: {orig_don.index}, day: {orig_day.index}')
+
+        # for row in final_availability:
+        #     print(row)
+        # print(f'-----------')
+
+
+    def store_switch(self, don_orig, day_orig, don_swap, day_swap, all_days):
+        """
+        Stores valid swaps between the people working on two days!
+        Verifies that this swap is allowed to occur.
+            - swap only allowed if dons available on both days, and dons are working on expected days.
+            - swap only allowed if it does not cause another intersection!
+
+        Return True if the swap occurred, false otherwise
+        :return:
+        """
+        # verify swap CAN occur
+        can_occur = True
+        if don_orig not in day_orig.working_dons:
+            can_occur = False
+        if don_swap not in day_swap.working_dons:
+            can_occur = False
+        if don_orig not in day_swap.available_dons:
+            can_occur = False
+        if don_swap not in day_orig.available_dons:
+            can_occur = False
+
+        if not can_occur:
+            # --------- give reasons why the swap is invalid!
+            print(f'SWAP IS INVALID!!!')
+
+        # verify swap won't cause another error
+        can_swap = True
+        # check if new don position causes an error
+        if day_swap.index + 1 < len(all_days) and don_orig in all_days[day_swap.index + 1].working_dons:
+            # if the next day has a value and that value is the orig don working...
+            can_swap = False
+        if day_swap.index - 1 >= 0 and don_orig in all_days[day_swap.index - 1].working_dons:
+            # swapping would put the original don in a bad spot
+            can_swap = False
+
+        if day_orig.index + 1 < len(all_days) and don_swap in all_days[day_orig.index + 1].working_dons:
+            can_swap = False
+        if day_orig.index - 1 >= 0 and don_swap in all_days[day_orig.index - 1].working_dons:
+            can_swap = False
+
+        if can_swap:
+            # print(f'    - swapping would help! day {day_orig.index} with day {day_swap.index}')
+            # print(f'                           don {don_orig.index} with don {don_swap.index}')
+
+
+            if day_orig.index < day_swap.index:
+                swap = (day_orig, day_swap, don_orig, don_swap)
+            else:
+                swap = (day_swap, day_orig, don_swap, don_orig)
+            self.all_swaps.add(swap)
+            return True
+        return False
+
+            # if day_orig not in self.helpful_swaps:
+            #     self.helpful_swaps[day_orig] = set()
+            # self.helpful_swaps[day_orig].add(day_swap)
+
+
+
+    def resolve(self, point_dict, all_days):
+        """
+        Attempts to resolve intersection by searching through all dons available
+        on the intersection causing day. Then searches through each of those dons, and see
+        if there is a day of equivalent point value which the original don is available.
+        :return:
+        """
+        # print(f'Intersection : ---')
+        # iterate through every day causing the intersection
+        for root_day in self.day_span:
+            # find all other dons available on this day
+            # print(f' - day: {root_day.index}')
+            found_swaps = 0
+            avail_dons = root_day.available_dons - {self.don_causing}
+            root_points = root_day.point_value
+            # # print(f'   alternate dons:')
+            # # for d in avail_dons:
+            # #     print(f'     - {d.index}')
+
+            # # for every day with the same worth... (except the original day)
+            for test_day in point_dict[root_points] - {root_day}:
+
+                # # print(f'testing day {test_day.index}')
+                # # for d in test_day.working_dons:
+                # #     print(f'  - working: {d.index}')
+                # # print(f'   - intersection {test_day.working_dons.intersection(avail_dons)}')
+
+                # check if someone helpful is working that day!
+                # then attempt to perform a store_switch.
+
+                # Should still have solutions...
+                if test_day.working_dons.intersection(avail_dons) and self.don_causing not in test_day.working_dons:
+                    # found someone helpful working on the test day!
+                    # just make sure the original don is also available
+                    if self.don_causing in test_day.available_dons:
+                        for swapee_don in test_day.working_dons.intersection(avail_dons):
+
+                            # make sure the swapee don isn't also working on this day, or else that wouldn't help!
+                            if swapee_don not in root_day.working_dons:
+                                found_swaps += 1
+                                # # print(f'possible store_switch!')
+                                # # print(f'day: {root_day.index} with day: {test_day.index}')
+                                # # print(f'orig: {self.don_causing.index} with don {swapee_don.index}')
+
+                                # helpful variables!
+                                don_orig = self.don_causing
+                                day_orig = root_day
+
+                                don_swap = swapee_don
+                                day_swap = test_day
+                                self.store_switch(don_orig, day_orig, don_swap, day_swap, all_days)
+            # print(f'    - found swaps: {found_swaps}')
+
+                # should have day 2 don 3 swap with day 9 don 4
+
+
+
+
+
+        # print(f'')
+
 
 
 def setup_classes(availability, final_availability):
@@ -833,26 +1013,160 @@ def setup_classes(availability, final_availability):
     return all_days
 
 
+
+def organize_by_points(all_days):
+    """
+    Returns a dict of all points organized by their days!
+    :param all_days:
+    :return:
+    """
+    point_dict = dict()
+    for day in all_days:
+        if day.point_value not in point_dict:
+            point_dict[day.point_value] = set()
+        point_dict[day.point_value].add(day)
+
+    return point_dict
+
+
+
 def find_consecutive_days(all_days):
     """
     Finds the working shifts where dons are working consecutively!
     :return:
     """
+    all_intersections = set()
 
     # goes through every day
     # compares dons working this day with dons working previous day.
     # if consecutive, records!
     prev_dons = set()
-    for day in all_days:
-        if day.point_value != 1:
-            curr_dons = day.working_dons
-            if curr_dons.intersection(prev_dons):
-                consecutive = curr_dons.intersection(prev_dons)
-                print(f'CONSECUTIVE DAYS!')
-                for d in consecutive:
-                    print(f'day {day.index}, don {d.index}')
-                print(f'')
-            prev_dons = curr_dons
+    curr_intersections = dict()
+    for d, day in enumerate(all_days):
+        curr_dons = day.working_dons
+
+        consec_dons = curr_dons.intersection(prev_dons)
+
+        # track the intersections!
+        if consec_dons:
+
+            # for each don causing a run of at least 2 days...
+            for causing_don in consec_dons:
+                # if this is the start of their run...
+                if causing_don not in curr_intersections:
+                    # initialize an intersection class
+                    curr_intersection = Intersection()
+                    curr_intersection.don_causing = causing_don
+                    curr_intersections[causing_don] = (curr_intersection)
+                    all_intersections.add(curr_intersection)
+
+                    # add the previous day into the intersection!
+                    curr_intersection.day_span.add(all_days[d - 1])
+                else:
+                    curr_intersection = curr_intersections[causing_don]
+
+                # add the current day into the intersection
+                curr_intersection.day_span.add(day)
+
+
+        # remove any dons being tracked by curr_intersections if there is no longer an intersection caused by them!
+        # have to have an intermediate "to_remove" variable b/c python gets upset if we
+        # update the dictionary while we iterate.
+
+        # for every don who is being tracked by the current intersections...
+        to_remove = set()
+        for prev_don in curr_intersections:
+            # if the don being tracked by curr_intersections is no longer causing an intersection, we can remove them!
+            if prev_don not in consec_dons:
+                to_remove.add(prev_don)
+
+        for removing_don in to_remove:
+            curr_intersections.pop(removing_don)
+
+        prev_dons = curr_dons
+
+    # for intersec in all_intersections:
+    #     print(f'caused by {intersec.don_causing.index}')
+    #     print(f'days involved:')
+    #     for day in intersec.day_span:
+    #         print(f'  - {day.index}')
+    #     print(f'')
+    return all_intersections
+
+
+def resolve_intersections(all_intersections, point_dict, all_days, final_availability):
+    """
+    Iterates through each intersection and attempts to resolve!
+    :param all_intersections:
+    :return:
+    """
+    for intersec in all_intersections:
+        intersec.resolve(point_dict, all_days)
+
+
+    swapped_dons = set()
+    return_to = set()
+    for intersec_1 in all_intersections:
+        for intersec_2 in all_intersections:
+            if intersec_1 != intersec_2:
+                double_help = intersec_1.all_swaps.intersection(intersec_2.all_swaps)
+                if double_help:
+                    swap = next(iter(double_help))
+                    # if len(double_help) > 1:
+                    #     # find recurring don
+                    #     recurring_don = set()
+                    #     for s in double_help:
+                    #         pair = set()
+                    #         pair.add(s[2])
+                    #         pair.add(s[3])
+                    #         if not recurring_don:
+                    #             print(f'set recurring don once...')
+                    #             recurring_don = pair
+                    #         else:
+                    #             print(f'intersection: {recurring_don.intersection(pair)}')
+                    #             recurring_don = recurring_don.intersection(pair)
+                    #
+                    #     print(f'found recurring don: {recurring_don}')
+                    #
+                    # for change in double_help:
+                    # print(f'super optimal swap!')
+                    # print(f'day: {change[0].index} and day: {change[1].index}')
+                    # print(f'day 1: {change[0].working_dons}')
+                    # print(f'day 2: {change[1].working_dons}')
+                    # print(f'')
+
+                    don_pair = set()
+                    don_pair.add(swap[2])
+                    don_pair.add(swap[3])
+                    if not don_pair.intersection(swapped_dons):
+
+                        intersec_1.do_swap(swap, final_availability)
+                        swapped_dons.add(swap[2])
+                        swapped_dons.add(swap[3])
+                        print(f'super optimal swap! dons {swap[2].index} and {swap[3].index}')
+
+    print(f'----')
+
+
+    # possibly perform swaps somewhere else?
+    for intersec in all_intersections:
+        if intersec.all_swaps:
+
+            for swap in intersec.all_swaps:
+                don_pair = set()
+                don_pair.add(swap[2])
+                don_pair.add(swap[3])
+                if not don_pair.intersection(swapped_dons):
+                    intersec.do_swap(swap, final_availability)
+                    swapped_dons.add(swap[2])
+                    swapped_dons.add(swap[3])
+                    print(f'super optimal swap! dons {swap[2].index} and {swap[3].index}')
+
+    print(f'outside...')
+    if swapped_dons:
+        return True
+    return False
+
 
 
 
@@ -880,9 +1194,23 @@ def repair_solution_two(availability, final_availability):
     :return:
     """
     # first, get the list of available and working dons!
+    can_swap = True
+    for row in final_availability:
+        print(row)
 
-    all_days = setup_classes(availability,final_availability)
-    find_consecutive_days(all_days)
+    # try solving just the 2-point problems first, then trickle down to 1 pointers?
+    two_points_first = True
+    while can_swap:
+
+        all_days = setup_classes(availability, final_availability)
+
+        point_dict = organize_by_points(all_days)
+
+        all_intersections = find_consecutive_days(all_days)
+
+        can_swap = resolve_intersections(all_intersections, point_dict, all_days, final_availability)
+        print(f'repairing...')
+
 
 
 

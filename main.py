@@ -66,7 +66,7 @@ delete_original = True
 max_difference = 500000000000
 max_entropy = 10000000
 entropy_spread = 1000000000000
-max_time = 300
+max_time = 600
 
 time_start = 0
 best_so_far = []
@@ -1297,6 +1297,11 @@ def loop_solve(num_per_day, availability, end=True, max_difference=3):
             now = datetime.now()
             formatted_time = now.strftime('%H:%M:%S %b %d, %Y')
             run_data.writelines(f"Solving at {formatted_time}\n")
+            run_data.writelines(f" - Please do NOT include images in excel file! Will break program.\n")
+            run_data.writelines(f" - Every sheet in workbook that does not start with 'block' will be deleted.\n")
+            run_data.writelines(f" - Active sheet must have the letter a at the end!\n")
+            run_data.writelines(f"\n")
+            # run_data.writelines(f" - Every sheet in workbook that does not start with 'block' will be deleted.")
             error_messages.append(f'')
             error_messages.append(f'')
             created_first = True

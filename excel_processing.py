@@ -137,6 +137,34 @@ def process_entry(entry):
     return val
 
 
+def find_sheet(dataframe):
+    found = False
+    sheet = None
+    for s in dataframe.sheetnames:
+        if s.split()[-1].lower() != 'a':
+            # del dataframe[s]
+            pass
+        else:
+            sheet = dataframe[s]
+            found = True
+            error_messages.append(f'{s}')
+            print(f'{s}')
+
+    if not found:
+        print(f'- Could not find active sheet!')
+        print(f'- make sure the active sheet ends with the letter A')
+        print(f"- ex. 'Block 2 avail (sep 3-Nov 6) A")
+        print(f'')
+
+        error_messages.append(f'- Could not find active sheet!')
+        error_messages.append(f'- make sure the active sheet ends with the letter A')
+        error_messages.append(f"- ex. 'Block 2 avail (sep 3-Nov 6) A")
+        error_messages.append(f'')
+
+
+    return sheet, found
+
+
 def open_notebook(path):
     # Takes a path to a .xlsx file.
     # Returns tuple of availability, dates, and names.
@@ -155,8 +183,38 @@ def open_notebook(path):
     # Define variable to load the dataframe
     dataframe = openpyxl.load_workbook(path)
 
+
     # Define variable to read sheet
     dataframe1 = dataframe.active
+
+    dataframe1, found = find_sheet(dataframe)
+    if not found:
+        return False, False
+
+    #
+    # found = False
+    # for s in dataframe.sheetnames:
+    #     if s.split()[-1].lower() != 'a':
+    #         # del dataframe[s]
+    #         pass
+    #     else:
+    #         dataframe1 = dataframe[s]
+    #         found = True
+    #         error_messages.append(f'{s}')
+    #         print(f'{s}')
+    #
+    # if not found:
+    #     print(f'- Could not find active sheet!')
+    #     print(f'- make sure the active sheet ends with the letter A')
+    #     print(f"- ex. 'Block 2 avail (sep 3-Nov 6) A")
+    #     print(f'')
+    #
+    #     error_messages.append(f'- Could not find active sheet!')
+    #     error_messages.append(f'- make sure the active sheet ends with the letter A')
+    #     error_messages.append(f"- ex. 'Block 2 avail (sep 3-Nov 6) A")
+    #     error_messages.append(f'')
+    #     return False, False
+
 
 
     # Start by getting all the dates
@@ -224,6 +282,14 @@ def save_workbook(availability):
 
     wb = openpyxl.load_workbook(path_original)
     sheet = wb.active
+
+
+    for s in wb.sheetnames:
+        if s[:5].lower() != 'block':
+            del wb[s]
+    sheet, found = find_sheet(wb)
+
+
     wb.save(path_original)
 
     r, c = get_origin(sheet)
